@@ -1,0 +1,10 @@
+Flask==3.0.0
+pymongo[srv]==4.6.1
+flask-login==0.6.3
+python-dotenv==1.0.0
+networkx==3.2.1
+requests==2.31.0
+gunicorn==21.2.0
+pygraphviz==1.12
+matplotlib==3.8.2
+openai==1.12.0
