@@ -67,15 +67,25 @@
         </div>
 
         <div id="mindmap-view" class="view-content active">
-            <div class="mindmap-controls" style="margin-bottom: 1rem; display: flex; gap: 1rem; align-items: center;">
-                <label>Filter by Subject:</label>
-                <select id="mindmap-subject-filter" style="width: auto; padding: 0.4rem 1rem;"
-                    onchange="fetchAIMindmap()">
-                    <option value="All">All Subjects</option>
-                    {% for subj in subjects %}
-                    <option value="{{ subj }}">{{ subj }}</option>
-                    {% endfor %}
-                </select>
+            <div class="mindmap-controls"
+                style="margin-bottom: 1rem; display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                <div>
+                    <label>Subject:</label>
+                    <select id="mindmap-subject-filter" style="width: auto; padding: 0.4rem 1rem;"
+                        onchange="updateModuleFilter()">
+                        <option value="All">All Subjects</option>
+                        {% for subj in subjects %}
+                        <option value="{{ subj }}">{{ subj }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div id="module-filter-container" style="display: none;">
+                    <label>Module:</label>
+                    <select id="mindmap-module-filter" style="width: auto; padding: 0.4rem 1rem;"
+                        onchange="fetchAIMindmap()">
+                        <option value="All">All Modules</option>
+                    </select>
+                </div>
                 <button class="btn btn-sm btn-secondary" onclick="fetchAIMindmap()">
                     <i class="fas fa-sync"></i> Re-graph with AI
                 </button>
@@ -584,12 +594,50 @@
         }
     }
 
+    const allTopics = [
+        {% for topic in topics %}
+    { id: "{{ topic._id }}", name: "{{ topic.name | escape }}", subject: "{{ topic.subject | escape }}" },
+    {% endfor %}
+    ];
+
+    function updateModuleFilter() {
+        const subject = document.getElementById('mindmap-subject-filter').value;
+        const moduleSelect = document.getElementById('mindmap-module-filter');
+        const moduleContainer = document.getElementById('module-filter-container');
+
+        if (subject === 'All') {
+            moduleContainer.style.display = 'none';
+            fetchAIMindmap();
+            return;
+        }
+
+        moduleContainer.style.display = 'block';
+        moduleSelect.innerHTML = '<option value="All">All Modules</option>';
+
+        const filtered = allTopics.filter(t => t.subject === subject);
+        filtered.forEach(t => {
+            const opt = document.createElement('option');
+            opt.value = t.id;
+            opt.innerText = t.name;
+            moduleSelect.appendChild(opt);
+        });
+
+        fetchAIMindmap();
+    }
+
     function fetchAIMindmap() {
         const container = document.getElementById('mindmap-container');
         const subject = document.getElementById('mindmap-subject-filter')?.value || 'All';
+        const moduleId = document.getElementById('mindmap-module-filter')?.value || 'All';
+
         container.innerHTML = '<div class="loader">AI Analysis in Progress...</div>';
 
-        fetch(`/api/mindmap?subject=${subject}`)
+        let url = `/api/mindmap?subject=${subject}`;
+        if (moduleId !== 'All') {
+            url = `/api/topic_mindmap/${moduleId}`;
+        }
+
+        fetch(url)
             .then(res => res.json())
             .then(data => {
                 container.innerHTML = `<div class="mermaid">${data.graph}</div>`;
