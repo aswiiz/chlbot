@@ -100,6 +100,54 @@ def get_ai_summary(text):
         print(f"SambaNova Error: {e}")
         return "Failed to generate AI summary."
 
+def get_ai_mindmap(topics_data):
+    if not client_ai:
+        return "graph TD\nRoot[Cognitive Hub]"
+    
+    # Prepare a condensed list of topics for the LLM
+    topics_list = []
+    for t in topics_data:
+        topics_list.append({
+            "id": f"T{str(t['_id'])[-4:]}", # Use last 4 chars of ID for safety
+            "name": t['name'],
+            "subject": t['subject']
+        })
+    
+    prompt = f"""
+    Based on the following list of study topics, create a Mermaid.js Mind Map (graph TD).
+    Group topics by their subjects first. 
+    Create a logical flow or hierarchy if possible (e.g., math topics might lead to physics).
+    
+    Rules:
+    1. Use 'graph TD' syntax.
+    2. Start with a central node 'Root[Cognitive Hub]'.
+    3. Connect subjects to Root.
+    4. Connect topics to their respective subjects.
+    5. VERY IMPORTANT: Only output the Mermaid code, nothing else. No markdown blocks.
+    
+    Topics: {json.dumps(topics_list)}
+    """
+    
+    try:
+        response = client_ai.chat.completions.create(
+            model="DeepSeek-R1-0528",
+            messages=[
+                {"role": "system", "content": "You are a graph architect. You only output valid Mermaid.js graph code."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.1
+        )
+        content = response.choices[0].message.content.strip()
+        # Clean up code blocks if LLM included them
+        if "```mermaid" in content:
+            content = content.split("```mermaid")[1].split("```")[0].strip()
+        elif "```" in content:
+            content = content.split("```")[1].split("```")[0].strip()
+        return content
+    except Exception as e:
+        print(f"Mindmap Error: {e}")
+        return "graph TD\nRoot[Cognitive Hub]"
+
 # Routes
 @app.route('/')
 def index():
@@ -187,6 +235,22 @@ def topic_details(topic_id):
         'score': topic['confidence_score'],
         'color': COLOR_MAP.get(topic['confidence_score'], '#FFFFFF')
     })
+
+@app.route('/api/mindmap')
+@login_required
+def api_mindmap():
+    user_topics = list(topics_collection.find({'user_id': current_user.id}))
+    if not user_topics:
+        return jsonify({'graph': "graph TD\nRoot[Cognitive Hub]"})
+    
+    graph_code = get_ai_mindmap(user_topics)
+    # Post-process to add colors (Mermaid styles)
+    for topic in user_topics:
+        tid = f"T{str(topic['_id'])[-4:]}"
+        color = COLOR_MAP.get(topic.get('confidence_score', 3), '#FFFFFF')
+        graph_code += f"\nstyle {tid} fill:{color},stroke:#333,stroke-width:2px,color:#000"
+        
+    return jsonify({'graph': graph_code})
 
 @app.route('/study/<topic_id>')
 @login_required
