@@ -67,14 +67,23 @@
         </div>
 
         <div id="mindmap-view" class="view-content active">
+            <div class="mindmap-controls" style="margin-bottom: 1rem; display: flex; gap: 1rem; align-items: center;">
+                <label>Filter by Subject:</label>
+                <select id="mindmap-subject-filter" style="width: auto; padding: 0.4rem 1rem;"
+                    onchange="fetchAIMindmap()">
+                    <option value="All">All Subjects</option>
+                    {% for subj in subjects %}
+                    <option value="{{ subj }}">{{ subj }}</option>
+                    {% endfor %}
+                </select>
+                <button class="btn btn-sm btn-secondary" onclick="fetchAIMindmap()">
+                    <i class="fas fa-sync"></i> Re-graph with AI
+                </button>
+            </div>
             <div id="mindmap-container" class="mermaid-container"
                 style="min-height: 400px; display: flex; align-items: center; justify-content: center;">
                 <div class="loader">AI Architecting your Knowledge...</div>
             </div>
-            <button class="btn btn-sm btn-secondary" style="position: absolute; bottom: 10px; right: 10px;"
-                onclick="fetchAIMindmap()">
-                <i class="fas fa-sync"></i> Re-graph with AI
-            </button>
         </div>
 
         <div id="flowchart-view" class="view-content">
@@ -577,9 +586,10 @@
 
     function fetchAIMindmap() {
         const container = document.getElementById('mindmap-container');
+        const subject = document.getElementById('mindmap-subject-filter')?.value || 'All';
         container.innerHTML = '<div class="loader">AI Analysis in Progress...</div>';
 
-        fetch('/api/mindmap')
+        fetch(`/api/mindmap?subject=${subject}`)
             .then(res => res.json())
             .then(data => {
                 container.innerHTML = `<div class="mermaid">${data.graph}</div>`;

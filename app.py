@@ -9,6 +9,8 @@ from pymongo import MongoClient
 from bson.objectid import ObjectId
 from dotenv import load_dotenv
 from openai import OpenAI
+import PyPDF2
+import io
 
 load_dotenv()
 
@@ -21,6 +23,7 @@ client = MongoClient(MONGO_URI)
 db = client['clh_db']
 users_collection = db['users']
 topics_collection = db['topics']
+documents_collection = db['documents']
 subject_choices = ['Physics', 'C Programming', 'Mathematics', 'Biology', 'Engineering Mechanics', 'Electrical Engineering', 'Computer Programming']
 
 # Flask-Login Setup
@@ -100,33 +103,47 @@ def get_ai_summary(text):
         print(f"SambaNova Error: {e}")
         return "Failed to generate AI summary."
 
-def get_ai_mindmap(topics_data):
+def get_ai_mindmap(topics_data, context="global", target_name=None):
     if not client_ai:
         return "graph TD\nRoot[Cognitive Hub]"
     
-    # Prepare a condensed list of topics for the LLM
-    topics_list = []
-    for t in topics_data:
-        topics_list.append({
-            "id": f"T{str(t['_id'])[-4:]}", # Use last 4 chars of ID for safety
-            "name": t['name'],
-            "subject": t['subject']
-        })
-    
-    prompt = f"""
-    Based on the following list of study topics, create a Mermaid.js Mind Map (graph TD).
-    Group topics by their subjects first. 
-    Create a logical flow or hierarchy if possible (e.g., math topics might lead to physics).
-    
-    Rules:
-    1. Use 'graph TD' syntax.
-    2. Start with a central node 'Root[Cognitive Hub]'.
-    3. Connect subjects to Root.
-    4. Connect topics to their respective subjects.
-    5. VERY IMPORTANT: Only output the Mermaid code, nothing else. No markdown blocks.
-    
-    Topics: {json.dumps(topics_list)}
-    """
+    if context == "topic":
+        # Mind map for a single topic (breaking it down)
+        content = topics_data[0].get('content', '') if topics_data else ''
+        prompt = f"""
+        Create a detailed Mermaid.js Mind Map (graph TD) for the topic: '{target_name}'.
+        Break down this topic into 5-8 logical sub-concepts or key points based on this content:
+        {content}
+        
+        Rules:
+        1. Use 'graph TD' syntax.
+        2. Start with a central node Root['{target_name}'].
+        3. Connect sub-concepts directly to Root.
+        4. VERY IMPORTANT: Only output the Mermaid code, nothing else. No markdown blocks.
+        """
+    else:
+        # Prepare a condensed list of topics for the LLM
+        topics_list = []
+        for t in topics_data:
+            topics_list.append({
+                "id": f"T{str(t['_id'])[-4:]}", 
+                "name": t['name'],
+                "subject": t['subject']
+            })
+        
+        scope = f"for the subject '{target_name}'" if context == "subject" else "for all my study topics"
+        prompt = f"""
+        Based on the following list of study topics {scope}, create a Mermaid.js Mind Map (graph TD).
+        
+        Rules:
+        1. Use 'graph TD' syntax.
+        2. Start with a central node 'Root[{target_name if target_name else "Cognitive Hub"}]'.
+        3. Connect subjects to Root (if global) or themes to Root (if subject-specific).
+        4. Connect topics to their respective parents.
+        5. VERY IMPORTANT: Only output the Mermaid code, nothing else. No markdown blocks.
+        
+        Topics: {json.dumps(topics_list)}
+        """
     
     try:
         response = client_ai.chat.completions.create(
@@ -138,7 +155,6 @@ def get_ai_mindmap(topics_data):
             temperature=0.1
         )
         content = response.choices[0].message.content.strip()
-        # Clean up code blocks if LLM included them
         if "```mermaid" in content:
             content = content.split("```mermaid")[1].split("```")[0].strip()
         elif "```" in content:
@@ -146,7 +162,7 @@ def get_ai_mindmap(topics_data):
         return content
     except Exception as e:
         print(f"Mindmap Error: {e}")
-        return "graph TD\nRoot[Cognitive Hub]"
+        return f"graph TD\nRoot[{target_name if target_name else 'Cognitive Hub'}]"
 
 # Routes
 @app.route('/')
@@ -239,17 +255,36 @@ def topic_details(topic_id):
 @app.route('/api/mindmap')
 @login_required
 def api_mindmap():
-    user_topics = list(topics_collection.find({'user_id': current_user.id}))
+    subject = request.args.get('subject')
+    query = {'user_id': current_user.id}
+    if subject and subject != 'All':
+        query['subject'] = subject
+        
+    user_topics = list(topics_collection.find(query))
     if not user_topics:
-        return jsonify({'graph': "graph TD\nRoot[Cognitive Hub]"})
+        return jsonify({'graph': f"graph TD\nRoot[{subject if subject else 'Cognitive Hub'}]"})
     
-    graph_code = get_ai_mindmap(user_topics)
+    context = "subject" if subject and subject != 'All' else "global"
+    graph_code = get_ai_mindmap(user_topics, context=context, target_name=subject)
+    
     # Post-process to add colors (Mermaid styles)
     for topic in user_topics:
         tid = f"T{str(topic['_id'])[-4:]}"
+        # Some LLMs might not use the ID but the name for node IDs in Mermaid if not careful
+        # We try to style both just in case, or assume the AI followed the ID rule
         color = COLOR_MAP.get(topic.get('confidence_score', 3), '#FFFFFF')
         graph_code += f"\nstyle {tid} fill:{color},stroke:#333,stroke-width:2px,color:#000"
         
+    return jsonify({'graph': graph_code})
+
+@app.route('/api/topic_mindmap/<topic_id>')
+@login_required
+def api_topic_mindmap(topic_id):
+    topic = topics_collection.find_one({'_id': ObjectId(topic_id), 'user_id': current_user.id})
+    if not topic:
+        return jsonify({'error': 'Topic not found'}), 404
+        
+    graph_code = get_ai_mindmap([topic], context="topic", target_name=topic['name'])
     return jsonify({'graph': graph_code})
 
 @app.route('/study/<topic_id>')
@@ -368,6 +403,124 @@ def review_topic(topic_id):
 def delete_topic(topic_id):
     topics_collection.delete_one({'_id': ObjectId(topic_id), 'user_id': current_user.id})
     return redirect(url_for('dashboard'))
+
+# --- Document Workspace / Special AI Section ---
+
+@app.route('/workspace')
+@login_required
+def workspace():
+    user_docs = list(documents_collection.find({'user_id': current_user.id}))
+    return render_template('workspace.html', documents=user_docs)
+
+@app.route('/upload_document', methods=['POST'])
+@login_required
+def upload_document():
+    if 'file' not in request.files:
+        flash('No file part')
+        return redirect(url_for('workspace'))
+    
+    file = request.files['file']
+    if file.filename == '':
+        flash('No selected file')
+        return redirect(url_for('workspace'))
+
+    text = ""
+    filename = file.filename
+    
+    try:
+        if filename.endswith('.pdf'):
+            reader = PyPDF2.PdfReader(io.BytesIO(file.read()))
+            for page in reader.pages:
+                text += page.extract_text() + "\n"
+        elif filename.endswith('.txt'):
+            text = file.read().decode('utf-8')
+        else:
+            flash('Unsupported file type (PDF/TXT only)')
+            return redirect(url_for('workspace'))
+            
+        if not text.strip():
+            flash('Empty document or failed to extract text.')
+            return redirect(url_for('workspace'))
+
+        doc_id = documents_collection.insert_one({
+            'user_id': current_user.id,
+            'filename': filename,
+            'content': text,
+            'timestamp': datetime.datetime.utcnow()
+        }).inserted_id
+        
+        flash(f'Document "{filename}" uploaded and processed!')
+        return redirect(url_for('workspace'))
+    except Exception as e:
+        print(f"Upload Error: {e}")
+        flash('Error processing document.')
+        return redirect(url_for('workspace'))
+
+@app.route('/api/workspace/generate', methods=['POST'])
+@login_required
+def workspace_generate():
+    if not client_ai:
+        return jsonify({'error': 'AI not configured.'}), 500
+        
+    doc_id = request.json.get('doc_id')
+    type_requested = request.json.get('type') # 'mindmap', 'flowchart', 'flashcards'
+    
+    doc = documents_collection.find_one({'_id': ObjectId(doc_id), 'user_id': current_user.id})
+    if not doc:
+        return jsonify({'error': 'Document not found.'}), 404
+        
+    content = doc['content'][:15000] # Limit content length for prompt safety
+    
+    system_prompts = {
+        'mindmap': "You are an expert at information visualization. Output ONLY valid Mermaid.js mindmap code (graph TD). Be hierarchical and logical. Use the provided text AS THE ONLY SOURCE OF TRUTH.",
+        'flowchart': "You are a process visualization expert. Output ONLY valid Mermaid.js flowchart code (graph LR) depicting the sequence of events or logic from the text. Use the provided text AS THE ONLY SOURCE OF TRUTH.",
+        'flashcards': "You are a memory specialist. Output 5-8 flashcards as a JSON array of objects with 'question' and 'answer' fields. Use the provided text AS THE ONLY SOURCE OF TRUTH."
+    }
+    
+    prompt_templates = {
+        'mindmap': f"Create a comprehensive mind map of the following text:\n\n{content}",
+        'flowchart': f"Convert the logic or process in the following text into a flowchart:\n\n{content}",
+        'flashcards': f"Generate high-quality study flashcards based on the following text:\n\n{content}"
+    }
+    
+    try:
+        response = client_ai.chat.completions.create(
+            model="DeepSeek-R1-0528",
+            messages=[
+                {"role": "system", "content": system_prompts.get(type_requested, "Help the student.")},
+                {"role": "user", "content": prompt_templates.get(type_requested, "N/A")}
+            ],
+            temperature=0.1
+        )
+        ai_resp = response.choices[0].message.content.strip()
+        
+        # Post-processing cleanup for AI results
+        if type_requested in ['mindmap', 'flowchart']:
+            if "```mermaid" in ai_resp:
+                ai_resp = ai_resp.split("```mermaid")[1].split("```")[0].strip()
+            elif "```" in ai_resp:
+                ai_resp = ai_resp.split("```")[1].split("```")[0].strip()
+        elif type_requested == 'flashcards':
+            if "```json" in ai_resp:
+                ai_resp = ai_resp.split("```json")[1].split("```")[0].strip()
+            elif "```" in ai_resp:
+                ai_resp = ai_resp.split("```")[1].split("```")[0].strip()
+            # Try to return as JSON if possible
+            try:
+                ai_resp = json.loads(ai_resp)
+            except:
+                pass
+
+        return jsonify({'result': ai_resp})
+    except Exception as e:
+        print(f"Workspace AI Error: {e}")
+        return jsonify({'error': 'AI failed to process the document.'}), 500
+
+@app.route('/delete_document/<doc_id>')
+@login_required
+def delete_document(doc_id):
+    documents_collection.delete_one({'_id': ObjectId(doc_id), 'user_id': current_user.id})
+    return redirect(url_for('workspace'))
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

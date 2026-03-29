@@ -1,5 +1,10 @@
 {% extends "base.html" %}
 
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({ startOnLoad: true, theme: 'dark' });</script>
+{% endblock %}
+
 {% block content %}
 <div class="study-container fade-in">
     <div class="study-card glass">
@@ -19,6 +24,14 @@
                     {% else %}
                     <p>Loading AI insights...</p>
                     {% endif %}
+                </div>
+            </div>
+
+            <div class="mindmap-section" style="margin-top: 2.5rem;">
+                <h2><i class="fas fa-project-diagram"></i> AI Topic Context Map</h2>
+                <div id="topic-mindmap-container" class="mermaid-container glass"
+                    style="min-height: 300px; display: flex; align-items: center; justify-content: center; margin-top: 1rem; padding: 1.5rem;">
+                    <div class="loader">AI Architecting sub-concepts...</div>
                 </div>
             </div>
 
@@ -120,6 +133,27 @@
         color: var(--accent-color);
         font-weight: 700;
     }
+
+    .loader {
+        color: var(--accent-color);
+        font-weight: 600;
+        letter-spacing: 1px;
+        animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+        0% {
+            opacity: 0.5;
+        }
+
+        50% {
+            opacity: 1;
+        }
+
+        100% {
+            opacity: 0.5;
+        }
+    }
 </style>
 
 <script>
@@ -128,5 +162,22 @@
     if (slider) {
         slider.oninput = function () { val.innerHTML = this.value; }
     }
+
+    function fetchTopicMindmap() {
+        const container = document.getElementById('topic-mindmap-container');
+        fetch('/api/topic_mindmap/{{ topic._id }}')
+            .then(res => res.json())
+            .then(data => {
+                container.innerHTML = `<div class="mermaid">${data.graph}</div>`;
+                mermaid.run({
+                    nodes: [container.querySelector('.mermaid')]
+                });
+            })
+            .catch(err => {
+                container.innerHTML = '<div class="error">AI failed to map concepts.</div>';
+            });
+    }
+
+    document.addEventListener('DOMContentLoaded', fetchTopicMindmap);
 </script>
 {% endblock %}
