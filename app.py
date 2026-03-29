@@ -24,7 +24,12 @@ db = client['clh_db']
 users_collection = db['users']
 topics_collection = db['topics']
 documents_collection = db['documents']
-subject_choices = ['Physics', 'C Programming', 'Mathematics', 'Biology', 'Engineering Mechanics', 'Electrical Engineering', 'Computer Programming']
+def get_available_subjects():
+    sources_dir = os.path.join(os.path.dirname(__file__), 'sources')
+    if not os.path.exists(sources_dir):
+        return []
+    # Return list of subdirectories (subjects)
+    return [d for d in os.listdir(sources_dir) if os.path.isdir(os.path.join(sources_dir, d))]
 
 # Flask-Login Setup
 login_manager = LoginManager()
@@ -226,7 +231,7 @@ def dashboard():
         topic['confidence_score'] = apply_knowledge_decay(topic)
         topic['color'] = COLOR_MAP.get(topic['confidence_score'], '#FFFFFF')
         
-    return render_template('dashboard.html', topics=user_topics, subjects=subject_choices)
+    return render_template('dashboard.html', topics=user_topics, subjects=get_available_subjects())
 
 @app.route('/add_topic', methods=['POST'])
 @login_required
@@ -234,7 +239,6 @@ def add_topic():
     topic_name = request.form.get('topic_name')
     subject = request.form.get('subject')
     confidence = int(request.form.get('confidence', 3))
-    
     topics_collection.insert_one({
         'user_id': current_user.id,
         'name': topic_name,
@@ -244,6 +248,10 @@ def add_topic():
         'content': f"Detailed info on {topic_name}..." # Placeholder content
     })
     return redirect(url_for('dashboard'))
+
+@app.context_processor
+def inject_subjects():
+    return dict(get_available_subjects=get_available_subjects())
 
 @app.route('/topic_details/<topic_id>')
 @login_required
@@ -344,55 +352,45 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
-SYLLABUS_TEMPLATES = {
-    'Physics': [
-        {'name': "Ohm's Law", 'content': "Ohm's law states that the current through a conductor between two points is directly proportional to the voltage across the two points. V=IR."},
-        {'name': "Photoelectric Effect", 'content': "The ejection of electrons from a metal surface when light of sufficient frequency shines on it."}
-    ],
-    'C Programming': [
-        {'name': "Pointers", 'content': "A pointer is a variable that stores the memory address of another variable."},
-        {'name': "Recursion", 'content': "Recursion in C refers to the process where a function calls themselves, either directly or indirectly."}
-    ],
-    'Mathematics': [
-        {'name': "Derivations", 'content': "Calculus focuses on limits, functions, derivatives, integrals, and infinite series."},
-        {'name': "Linear Algebra", 'content': "Branch of mathematics concerning linear equations, linear maps, and their representations in vector spaces."}
-    ],
-    'Biology': [
-        {'name': "Photosynthesis", 'content': "Process by which green plants and some other organisms use sunlight to synthesize foods from carbon dioxide and water."},
-        {'name': "Cell Structure", 'content': "The cell is the basic structural, functional, and biological unit of all known organisms."}
-    ],
-    'Engineering Mechanics': [
-        {'name': "Force Systems", 'content': "A system of forces where all forces act in the same plane. Includes tension, compression, and shear."},
-        {'name': "Centroids", 'content': "The geometric center of a plane area or the point where the entire area can be considered to be concentrated."}
-    ],
-    'Electrical Engineering': [
-        {'name': "Kirchhoff's Laws", 'content': "KCL: The algebraic sum of currents entering a node is zero. KVL: The algebraic sum of voltages in a loop is zero."},
-        {'name': "Magnetic Circuits", 'content': "Reluctance, magnetomotive force (MMF), and flux density in ferromagnetic materials."}
-    ],
-    'Computer Programming': [
-        {'name': "Data Structures", 'content': "Ways to organize and store data in a computer so that it can be accessed and modified efficiently. e.g. Arrays, Linked Lists."},
-        {'name': "Algorithms", 'content': "A finite set of instructions to solve a particular problem. e.g. Sorting, Searching."}
-    ]
-}
+# Removed SYLLABUS_TEMPLATES as requested. Loading from files now.
 
 @app.route('/pre_load_subjects', methods=['POST'])
 @login_required
 def pre_load_subjects():
     selected_subjects = request.form.getlist('subjects')
+    sources_dir = os.path.join(os.path.dirname(__file__), 'sources')
+    
+    # Remove existing preloaded data for the current user to start fresh
+    topics_collection.delete_many({'user_id': current_user.id})
+    
     for subj in selected_subjects:
-        if subj in SYLLABUS_TEMPLATES:
-            for topic in SYLLABUS_TEMPLATES[subj]:
-                # Check if topic already exists for user
-                if not topics_collection.find_one({'user_id': current_user.id, 'name': topic['name']}):
-                    topics_collection.insert_one({
-                        'user_id': current_user.id,
-                        'name': topic['name'],
-                        'subject': subj,
-                        'confidence_score': 3,
-                        'last_reviewed': datetime.datetime.utcnow(),
-                        'content': topic['content']
-                    })
-    flash('Syllabus pre-loaded successfully!')
+        subj_path = os.path.join(sources_dir, subj)
+        if os.path.isdir(subj_path):
+            # Each file in this directory is a "Module / Topic"
+            for filename in os.listdir(subj_path):
+                file_path = os.path.join(subj_path, filename)
+                if os.path.isfile(file_path):
+                    # Extract module name from filename (e.g. modul2.txt -> modul2)
+                    topic_name = os.path.splitext(filename)[0]
+                    
+                    # Check if topic already exists for user
+                    if not topics_collection.find_one({'user_id': current_user.id, 'name': topic_name, 'subject': subj}):
+                        try:
+                            with open(file_path, 'r') as f:
+                                content = f.read()
+                            
+                            topics_collection.insert_one({
+                                'user_id': current_user.id,
+                                'name': topic_name,
+                                'subject': subj,
+                                'confidence_score': 3,
+                                'last_reviewed': datetime.datetime.utcnow(),
+                                'content': content
+                            })
+                        except Exception as e:
+                            print(f"Error reading {file_path}: {e}")
+                            
+    flash('Syllabus documents loaded successfully from sources!')
     return redirect(url_for('dashboard'))
 
 @app.route('/review_topic/<topic_id>', methods=['POST'])
