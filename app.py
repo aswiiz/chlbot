@@ -480,9 +480,9 @@ def workspace_generate():
     content = doc['content'][:15000] # Limit content length for prompt safety
     
     system_prompts = {
-        'mindmap': "You are an expert at information visualization. Output ONLY valid Mermaid.js mindmap code (graph TD). Be hierarchical and logical. Use the provided text AS THE ONLY SOURCE OF TRUTH.",
-        'flowchart': "You are a process visualization expert. Output ONLY valid Mermaid.js flowchart code (graph LR) depicting the sequence of events or logic from the text. Use the provided text AS THE ONLY SOURCE OF TRUTH.",
-        'flashcards': "You are a memory specialist. Output 5-8 flashcards as a JSON array of objects with 'question' and 'answer' fields. Use the provided text AS THE ONLY SOURCE OF TRUTH."
+        'mindmap': "You are an expert at information visualization. Output ONLY valid Mermaid.js mindmap code (graph TD). Use DOUBLE QUOTES for labels: A[\"Label\"]. Avoid [],(),{},# inside labels. Use provided text AS ONLY SOURCE OF TRUTH.",
+        'flowchart': "You are a process visualization expert. Output ONLY valid Mermaid.js flowchart code (graph LR). Use DOUBLE QUOTES for labels: A[\"Label\"]. Avoid [],(),{},# inside labels. Use provided text AS ONLY SOURCE OF TRUTH.",
+        'flashcards': "You are a memory specialist. Output 5-8 flashcards as a JSON array of objects with 'question' and 'answer' fields. Use provided text AS ONLY SOURCE OF TRUTH."
     }
     
     prompt_templates = {

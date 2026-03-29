@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block head %}
-<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.5/dist/mermaid.min.js"></script>
 <script>mermaid.initialize({ startOnLoad: false, theme: 'dark' });</script>
 {% endblock %}
 
@@ -349,12 +349,17 @@
             });
     }
 
-    function renderMermaid(code) {
+    async function renderMermaid(code) {
         const cont = document.getElementById('mermaid-output');
-        cont.innerHTML = `<div class="mermaid">${code}</div>`;
-        mermaid.run({
-            nodes: [cont.querySelector('.mermaid')]
-        });
+        cont.innerHTML = '';
+        const id = 'mermaid-' + Math.floor(Math.random() * 10000);
+        try {
+            const { svg } = await mermaid.render(id, code);
+            cont.innerHTML = svg;
+        } catch (err) {
+            console.error("Mermaid Render Error", err);
+            cont.innerHTML = '<div class="error">AI produced invalid diagram syntax. Try regenerating.</div>';
+        }
     }
 
     function renderFlashcards(cards) {

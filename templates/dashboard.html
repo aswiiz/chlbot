@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 
 {% block head %}
-<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-<script>mermaid.initialize({ startOnLoad: true, theme: 'dark' });</script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.5/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({ startOnLoad: false, theme: 'dark' });</script>
 {% endblock %}
 
 {% block content %}
@@ -625,7 +625,7 @@
         fetchAIMindmap();
     }
 
-    function fetchAIMindmap() {
+    async function fetchAIMindmap() {
         const container = document.getElementById('mindmap-container');
         const subject = document.getElementById('mindmap-subject-filter')?.value || 'All';
         const topicId = document.getElementById('mindmap-topic-filter')?.value || 'All';
@@ -637,17 +637,16 @@
             url = `/api/topic_mindmap/${topicId}`;
         }
 
-        fetch(url)
-            .then(res => res.json())
-            .then(data => {
-                container.innerHTML = `<div class="mermaid">${data.graph}</div>`;
-                mermaid.run({
-                    nodes: [container.querySelector('.mermaid')]
-                });
-            })
-            .catch(err => {
-                container.innerHTML = '<div class="error">AI failed to map the topics. Try refreshing.</div>';
-            });
+        try {
+            const res = await fetch(url);
+            const data = await res.json();
+            const id = 'mermaid-' + Math.floor(Math.random() * 10000);
+            const { svg } = await mermaid.render(id, data.graph);
+            container.innerHTML = svg;
+        } catch (err) {
+            console.error("Fetch/Render Error", err);
+            container.innerHTML = '<div class="error">AI failed to map the topics. Try refreshing.</div>';
+        }
     }
 
     // Load initial mindmap
