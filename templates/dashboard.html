@@ -68,22 +68,22 @@
 
         <div id="mindmap-view" class="view-content active">
             <div class="mindmap-controls"
-                style="margin-bottom: 1rem; display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
-                <div>
+                style="margin-bottom: 1rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;">
+                <div class="control-group">
                     <label>Subject:</label>
                     <select id="mindmap-subject-filter" style="width: auto; padding: 0.4rem 1rem;"
-                        onchange="updateModuleFilter()">
+                        onchange="updateTopicList()">
                         <option value="All">All Subjects</option>
                         {% for subj in subjects %}
                         <option value="{{ subj }}">{{ subj }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div id="module-filter-container" style="display: none;">
-                    <label>Module:</label>
-                    <select id="mindmap-module-filter" style="width: auto; padding: 0.4rem 1rem;"
+                <div id="topic-filter-group" class="control-group" style="display: none;">
+                    <label>Module / Topic:</label>
+                    <select id="mindmap-topic-filter" style="width: auto; padding: 0.4rem 1rem;"
                         onchange="fetchAIMindmap()">
-                        <option value="All">All Modules</option>
+                        <option value="All">All Topics</option>
                     </select>
                 </div>
                 <button class="btn btn-sm btn-secondary" onclick="fetchAIMindmap()">
@@ -594,33 +594,33 @@
         }
     }
 
+    // Pre-loaded topics data for JS access
     const allTopics = [
         {% for topic in topics %}
-    { id: "{{ topic._id }}", name: "{{ topic.name | escape }}", subject: "{{ topic.subject | escape }}" },
+    { id: "{{ topic._id }}", name: "{{ topic.name | e }}", subject: "{{ topic.subject | e }}" },
     {% endfor %}
     ];
 
-    function updateModuleFilter() {
+    function updateTopicList() {
         const subject = document.getElementById('mindmap-subject-filter').value;
-        const moduleSelect = document.getElementById('mindmap-module-filter');
-        const moduleContainer = document.getElementById('module-filter-container');
+        const topicFilterGroup = document.getElementById('topic-filter-group');
+        const topicSelect = document.getElementById('mindmap-topic-filter');
+
+        // Reset topic selector
+        topicSelect.innerHTML = '<option value="All">All Topics</option>';
 
         if (subject === 'All') {
-            moduleContainer.style.display = 'none';
-            fetchAIMindmap();
-            return;
+            topicFilterGroup.style.display = 'none';
+        } else {
+            topicFilterGroup.style.display = 'flex';
+            const filteredTopics = allTopics.filter(t => t.subject === subject);
+            filteredTopics.forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = t.id;
+                opt.textContent = t.name;
+                topicSelect.appendChild(opt);
+            });
         }
-
-        moduleContainer.style.display = 'block';
-        moduleSelect.innerHTML = '<option value="All">All Modules</option>';
-
-        const filtered = allTopics.filter(t => t.subject === subject);
-        filtered.forEach(t => {
-            const opt = document.createElement('option');
-            opt.value = t.id;
-            opt.innerText = t.name;
-            moduleSelect.appendChild(opt);
-        });
 
         fetchAIMindmap();
     }
@@ -628,13 +628,13 @@
     function fetchAIMindmap() {
         const container = document.getElementById('mindmap-container');
         const subject = document.getElementById('mindmap-subject-filter')?.value || 'All';
-        const moduleId = document.getElementById('mindmap-module-filter')?.value || 'All';
+        const topicId = document.getElementById('mindmap-topic-filter')?.value || 'All';
 
         container.innerHTML = '<div class="loader">AI Analysis in Progress...</div>';
 
         let url = `/api/mindmap?subject=${subject}`;
-        if (moduleId !== 'All') {
-            url = `/api/topic_mindmap/${moduleId}`;
+        if (topicId !== 'All') {
+            url = `/api/topic_mindmap/${topicId}`;
         }
 
         fetch(url)
@@ -646,7 +646,7 @@
                 });
             })
             .catch(err => {
-                container.innerHTML = '<div class="error">AI was too tired. Try again later.</div>';
+                container.innerHTML = '<div class="error">AI failed to map the topics. Try refreshing.</div>';
             });
     }
 
