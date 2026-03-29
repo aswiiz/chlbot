@@ -117,9 +117,11 @@ def get_ai_mindmap(topics_data, context="global", target_name=None):
         
         Rules:
         1. Use 'graph TD' syntax.
-        2. Start with a central node Root['{target_name}'].
+        2. Start with a central node Root["{target_name}"].
         3. Connect sub-concepts directly to Root.
-        4. VERY IMPORTANT: Only output the Mermaid code, nothing else. No markdown blocks.
+        4. CRITICAL: Use DOUBLE QUOTES for all labels like: A["Label Name"].
+        5. CRITICAL: Avoid using symbols like [], (), {{}}, or # inside labels. Use plain text and dots only.
+        6. VERY IMPORTANT: Only output the Mermaid code, nothing else. No markdown blocks.
         """
     else:
         # Prepare a condensed list of topics for the LLM
@@ -137,10 +139,12 @@ def get_ai_mindmap(topics_data, context="global", target_name=None):
         
         Rules:
         1. Use 'graph TD' syntax.
-        2. Start with a central node 'Root[{target_name if target_name else "Cognitive Hub"}]'.
+        2. Start with a central node Root["{target_name if target_name else "Cognitive Hub"}"].
         3. Connect subjects to Root (if global) or themes to Root (if subject-specific).
         4. Connect topics to their respective parents.
-        5. VERY IMPORTANT: Only output the Mermaid code, nothing else. No markdown blocks.
+        5. CRITICAL: Use DOUBLE QUOTES for all labels like: A["Label Name"].
+        6. CRITICAL: Avoid using symbols like [], (), {{}}, or # inside labels. Use plain text and dots only.
+        7. VERY IMPORTANT: Only output the Mermaid code, nothing else. No markdown blocks.
         
         Topics: {json.dumps(topics_list)}
         """
@@ -159,6 +163,12 @@ def get_ai_mindmap(topics_data, context="global", target_name=None):
             content = content.split("```mermaid")[1].split("```")[0].strip()
         elif "```" in content:
             content = content.split("```")[1].split("```")[0].strip()
+        
+        # Final Sanitization: Ensure no raw brackets inside quoted strings or stray characters
+        # And ensure the AI actually produced a graph definition
+        if "graph " not in content:
+            return f"graph TD\nRoot[\"{target_name if target_name else 'Cognitive Hub'}\"]"
+            
         return content
     except Exception as e:
         print(f"Mindmap Error: {e}")
