@@ -1,8 +1,9 @@
 fastapi
-uvicorn
 motor
 pymongo[srv]
 dnspython
-openai
+openai<1.0.0
 python-multipart
 python-dotenv
+gunicorn
+uvicorn[standard]
