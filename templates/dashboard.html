@@ -79,7 +79,7 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div id="topic-filter-group" class="control-group" style="display: none;">
+                <div id="topic-filter-group" class="control-group" style="display: flex;">
                     <label>Module / Topic:</label>
                     <select id="mindmap-topic-filter" style="width: auto; padding: 0.4rem 1rem;"
                         onchange="fetchAIMindmap()">
@@ -615,18 +615,16 @@
         // Reset topic selector
         topicSelect.innerHTML = '<option value="All">All Topics</option>';
 
-        if (subject === 'All') {
-            topicFilterGroup.style.display = 'none';
-        } else {
-            topicFilterGroup.style.display = 'flex';
-            const filteredTopics = allTopics.filter(t => t.subject.toLowerCase() === subject.toLowerCase());
-            filteredTopics.forEach(t => {
-                const opt = document.createElement('option');
-                opt.value = t.id;
-                opt.textContent = t.name;
-                topicSelect.appendChild(opt);
-            });
-        }
+        const filteredTopics = subject === 'All'
+            ? allTopics
+            : allTopics.filter(t => t.subject.toLowerCase() === subject.toLowerCase());
+
+        filteredTopics.forEach(t => {
+            const opt = document.createElement('option');
+            opt.value = t.id;
+            opt.textContent = t.name;
+            topicSelect.appendChild(opt);
+        });
 
         fetchAIMindmap();
     }
