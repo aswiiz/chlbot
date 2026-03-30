@@ -95,7 +95,7 @@ def get_ai_summary(text):
     
     try:
         response = client_ai.chat.completions.create(
-            model="DeepSeek-R1-0528",
+            model="Meta-Llama-3.1-8B-Instruct",
             messages=[
                 {"role": "system", "content": "You are a helpful learning assistant. Provide 'Golden Points' (very concise summary) for the following topic content. Use bullet points."},
                 {"role": "user", "content": text}
@@ -156,7 +156,7 @@ def get_ai_mindmap(topics_data, context="global", target_name=None):
     
     try:
         response = client_ai.chat.completions.create(
-            model="DeepSeek-R1-0528",
+            model="Meta-Llama-3.1-8B-Instruct",
             messages=[
                 {"role": "system", "content": "You are a graph architect. You only output valid Mermaid.js graph code."},
                 {"role": "user", "content": prompt}
@@ -233,9 +233,12 @@ def dashboard():
         
     return render_template('dashboard.html', topics=user_topics, subjects=get_available_subjects())
 
-@app.route('/add_topic', methods=['POST'])
+@app.route('/add_topic', methods=['GET', 'POST'])
 @login_required
 def add_topic():
+    if request.method == 'GET':
+        return redirect(url_for('dashboard'))
+    
     topic_name = request.form.get('topic_name')
     subject = request.form.get('subject')
     confidence = int(request.form.get('confidence', 3))
@@ -332,7 +335,7 @@ def chat():
         
     try:
         response = client_ai.chat.completions.create(
-            model="DeepSeek-R1-0528",
+            model="Meta-Llama-3.1-8B-Instruct",
             messages=[
                 {"role": "system", "content": "You are a specialized Cognitive Learning Assistant for engineering students. Help them understand complex topics, solve problems, and suggest study plans. Be concise and encouraging."},
                 {"role": "user", "content": user_message}
@@ -354,9 +357,12 @@ def logout():
 
 # Removed SYLLABUS_TEMPLATES as requested. Loading from files now.
 
-@app.route('/pre_load_subjects', methods=['POST'])
+@app.route('/pre_load_subjects', methods=['GET', 'POST'])
 @login_required
 def pre_load_subjects():
+    if request.method == 'GET':
+        return redirect(url_for('dashboard'))
+    
     selected_subjects = request.form.getlist('subjects')
     sources_dir = os.path.join(os.path.dirname(__file__), 'sources')
     
@@ -393,9 +399,12 @@ def pre_load_subjects():
     flash('Syllabus documents loaded successfully from sources!')
     return redirect(url_for('dashboard'))
 
-@app.route('/review_topic/<topic_id>', methods=['POST'])
+@app.route('/review_topic/<topic_id>', methods=['GET', 'POST'])
 @login_required
 def review_topic(topic_id):
+    if request.method == 'GET':
+        return redirect(url_for('dashboard'))
+    
     confidence = int(request.form.get('confidence', 3))
     topics_collection.update_one(
         {'_id': ObjectId(topic_id), 'user_id': current_user.id},
@@ -420,9 +429,12 @@ def workspace():
     user_docs = list(documents_collection.find({'user_id': current_user.id}))
     return render_template('workspace.html', documents=user_docs)
 
-@app.route('/upload_document', methods=['POST'])
+@app.route('/upload_document', methods=['GET', 'POST'])
 @login_required
 def upload_document():
+    if request.method == 'GET':
+        return redirect(url_for('workspace'))
+    
     if 'file' not in request.files:
         flash('No file part')
         return redirect(url_for('workspace'))
@@ -493,7 +505,7 @@ def workspace_generate():
     
     try:
         response = client_ai.chat.completions.create(
-            model="DeepSeek-R1-0528",
+            model="Meta-Llama-3.1-8B-Instruct",
             messages=[
                 {"role": "system", "content": system_prompts.get(type_requested, "Help the student.")},
                 {"role": "user", "content": prompt_templates.get(type_requested, "N/A")}

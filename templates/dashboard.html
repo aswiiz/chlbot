@@ -139,10 +139,16 @@
                     <strong>{{ topic.name }}</strong>
                     <p>{{ topic.subject }}</p>
                 </div>
-                <div class="topic-score"
-                    onclick="openReviewModal('{{ topic._id }}', '{{ topic.name }}', {{ topic.confidence_score }})"
-                    style="cursor: pointer; background: {{ topic.color }}88;">
-                    {{ topic.confidence_score }}
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <div class="topic-score"
+                        onclick="openReviewModal('{{ topic._id }}', '{{ topic.name }}', {{ topic.confidence_score }})"
+                        style="cursor: pointer; background: {{ topic.color }}88;">
+                        {{ topic.confidence_score }}
+                    </div>
+                    <a href="{{ url_for('delete_topic', topic_id=topic._id) }}" class="delete-link"
+                        onclick="return confirm('Delete this topic?')">
+                        <i class="fas fa-trash"></i>
+                    </a>
                 </div>
             </li>
             {% endfor %}
