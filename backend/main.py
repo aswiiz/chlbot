@@ -14,6 +14,10 @@ load_dotenv()
 
 app = FastAPI(title="Cognitive Learning Hub")
 
+# For debugging purposes
+print(f"Current working directory: {os.getcwd()}")
+print(f"File path: {os.path.abspath(__file__)}")
+
 # Enable CORS for development
 app.add_middleware(
     CORSMiddleware,
