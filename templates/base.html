@@ -173,6 +173,8 @@
         <ul class="nav-links">
             {% if current_user.is_authenticated %}
             <li><a href="{{ url_for('dashboard') }}" class="nav-link">Dashboard</a></li>
+            <li><a href="{{ url_for('mindmap_pro') }}" class="nav-link"><i class="fas fa-project-diagram"></i> Mind Map
+                    Pro</a></li>
             <li><a href="{{ url_for('workspace') }}" class="nav-link"><i class="fas fa-microchip"></i> AI Workspace</a>
             </li>
             <li><a href="{{ url_for('logout') }}" class="nav-link">Logout</a></li>

@@ -12,6 +12,7 @@ from openai import OpenAI
 import PyPDF2
 import io
 import re
+import docx
 
 load_dotenv()
 
@@ -208,6 +209,55 @@ def get_ai_mindmap(topics_data, context="global", target_name=None):
         print(f"Mindmap Error: {e}")
         return f"graph TD\nRoot[{target_name if target_name else 'Cognitive Hub'}]"
 
+def get_ai_mindmap_json(text, target_name="Mind Map"):
+    """
+    Generate a JSON-based hierarchy for Mind-Elixir.
+    """
+    if not client_ai:
+        return {"id": "root", "topic": "AI Not Configured", "root": True}
+    
+    prompt = f"""
+    Create a deep hierarchical Mind Map in JSON format for the topic: '{target_name}'.
+    Analyze the following text and extract 5-10 main branches, each with 2-4 sub-branches.
+    
+    Rules:
+    1. Output ONLY a valid JSON object.
+    2. Every node MUST have an 'id' and 'topic' (the label).
+    3. Use 'children': [...] for sub-nodes.
+    4. The root node must have "root": true.
+    5. Be professional and academic.
+    
+    Text: {text[:15000]}
+    
+    Example Structure:
+    {{
+      "id": "root",
+      "topic": "{target_name}",
+      "root": true,
+      "children": [
+        {{ "id": "1", "topic": "Theme 1", "children": [...] }}
+      ]
+    }}
+    """
+    
+    try:
+        response = client_ai.chat.completions.create(
+            model="Meta-Llama-3.1-8B-Instruct",
+            messages=[
+                {"role": "system", "content": "You are a JSON graph architect. You only output valid JSON. No markdown blocks."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.1
+        )
+        resp = response.choices[0].message.content.strip()
+        if "```json" in resp: resp = resp.split("```json")[1].split("```")[0].strip()
+        elif "```" in resp: resp = resp.split("```")[1].split("```")[0].strip()
+        
+        return json.loads(resp)
+    except Exception as e:
+        print(f"JSON Mindmap Error: {e}")
+        return {"id": "root", "topic": f"Error: {str(e)}", "root": True}
+
 # Routes
 @app.route('/')
 def index():
@@ -261,6 +311,38 @@ def dashboard():
         topic['color'] = COLOR_MAP.get(topic['confidence_score'], '#FFFFFF')
         
     return render_template('dashboard.html', topics=user_topics, subjects=get_available_subjects())
+
+@app.route('/mindmap_pro')
+@login_required
+def mindmap_pro():
+    docs = list(documents_collection.find({'user_id': current_user.id}))
+    return render_template('mindmap_pro.html', documents=docs)
+
+@app.route('/api/mindmap/pro', methods=['POST'])
+@login_required
+def api_mindmap_pro():
+    if not client_ai:
+        return jsonify({'error': 'AI not configured.'}), 500
+        
+    source_type = request.json.get('source_type') # 'text' or 'doc_id'
+    target_name = "New Exploration"
+    content = ""
+    
+    if source_type == 'doc_id':
+        doc_id = request.json.get('doc_id')
+        doc = documents_collection.find_one({'_id': ObjectId(doc_id), 'user_id': current_user.id})
+        if doc:
+            content = doc['content']
+            target_name = doc['filename']
+    else:
+        content = request.json.get('text', '')
+        target_name = request.json.get('name', 'My Note')
+        
+    if not content:
+        return jsonify({'error': 'No content provided.'}), 400
+        
+    mind_data = get_ai_mindmap_json(content, target_name)
+    return jsonify({'nodeData': mind_data})
 
 @app.route('/add_topic', methods=['GET', 'POST'])
 @login_required
@@ -481,10 +563,14 @@ def upload_document():
             reader = PyPDF2.PdfReader(io.BytesIO(file.read()))
             for page in reader.pages:
                 text += page.extract_text() + "\n"
+        elif filename.endswith('.docx'):
+            doc = docx.Document(io.BytesIO(file.read()))
+            for para in doc.paragraphs:
+                text += para.text + "\n"
         elif filename.endswith('.txt'):
             text = file.read().decode('utf-8')
         else:
-            flash('Unsupported file type (PDF/TXT only)')
+            flash('Unsupported file type (PDF/DOCX/TXT only)')
             return redirect(url_for('workspace'))
             
         if not text.strip():

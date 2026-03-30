@@ -1,0 +1,389 @@
+{% extends "base.html" %}
+
+{% block head %}
+<!-- Mind-Elixir CSS & JS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mind-elixir/dist/mind-elixir.css">
+<script src="https://cdn.jsdelivr.net/npm/mind-elixir/dist/mind-elixir.js"></script>
+<!-- Icons & Google Fonts already in base.html -->
+<style>
+    .mindmap-pro-wrapper {
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        gap: 1.5rem;
+        height: calc(100vh - 120px);
+        margin-top: 1rem;
+    }
+
+    /* Input Sidebar */
+    .mindmap-sidebar {
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        overflow-y: auto;
+    }
+
+    .input-section {
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+    }
+
+    .source-tabs {
+        display: flex;
+        gap: 0.5rem;
+        background: rgba(0, 0, 0, 0.3);
+        padding: 0.3rem;
+        border-radius: 12px;
+    }
+
+    .source-tab {
+        flex: 1;
+        text-align: center;
+        padding: 0.5rem;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-dim);
+        transition: all 0.3s;
+    }
+
+    .source-tab.active {
+        background: var(--accent-color);
+        color: var(--primary-bg);
+    }
+
+    .input-box {
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        padding: 1rem;
+        color: white;
+        width: 100%;
+        font-size: 0.9rem;
+        outline: none;
+        resize: none;
+    }
+
+    /* Canvas Area */
+    .mindmap-canvas-container {
+        position: relative;
+        overflow: hidden;
+        background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+    }
+
+    #map-container {
+        width: 100%;
+        height: 100%;
+    }
+
+    /* Floating Toolbar */
+    .map-toolbar {
+        position: absolute;
+        top: 1.5rem;
+        right: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+        z-index: 100;
+    }
+
+    .toolbar-btn {
+        width: 45px;
+        height: 45px;
+        border-radius: 12px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 1.2rem;
+        background: var(--secondary-bg);
+        border: 1px solid var(--glass-border);
+        color: white;
+        cursor: pointer;
+        transition: all 0.3s;
+        backdrop-filter: blur(10px);
+    }
+
+    .toolbar-btn:hover {
+        background: var(--accent-color);
+        color: var(--primary-bg);
+        transform: translateY(-2px);
+    }
+
+    .map-search {
+        position: absolute;
+        bottom: 1.5rem;
+        left: 1.5rem;
+        z-index: 100;
+        width: 250px;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 0.8rem 2.5rem 0.8rem 1rem;
+        background: var(--secondary-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        color: white;
+        backdrop-filter: blur(10px);
+    }
+
+    .search-input+i {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-dim);
+    }
+
+    /* Source Picker */
+    .doc-picker {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    .doc-picker-item {
+        padding: 0.8rem;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.05);
+        cursor: pointer;
+        font-size: 0.85rem;
+        transition: all 0.2s;
+    }
+
+    .doc-picker-item:hover {
+        background: rgba(56, 189, 248, 0.1);
+    }
+
+    .doc-picker-item.selected {
+        border: 1px solid var(--accent-color);
+        background: rgba(56, 189, 248, 0.2);
+    }
+
+    .loader-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.8);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        flex-direction: column;
+        gap: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mindmap-pro-wrapper fade-in">
+    <!-- Sidebar: Controls -->
+    <div class="mindmap-sidebar glass">
+        <h3><i class="fas fa-project-diagram" style="color: var(--accent-color);"></i> Mind Map Pro</h3>
+
+        <div class="input-section">
+            <label style="font-size: 0.8rem; color: var(--text-dim);">SELECT SOURCE</label>
+            <div class="source-tabs">
+                <div class="source-tab active" onclick="setSource('text')">Notes</div>
+                <div class="source-tab" onclick="setSource('doc')">Source File</div>
+            </div>
+        </div>
+
+        <!-- Text Input Mode -->
+        <div id="text-input-mode" class="input-section">
+            <input type="text" id="map-name" placeholder="Map Title..." class="input-box"
+                style="margin-bottom: 0.5rem;">
+            <textarea id="note-content" rows="10" placeholder="Type or paste your notes here..."
+                class="input-box"></textarea>
+        </div>
+
+        <!-- Document Picker Mode -->
+        <div id="doc-input-mode" class="input-section" style="display: none;">
+            <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 0.5rem;">Select from your library:</p>
+            <ul class="doc-picker">
+                {% for doc in documents %}
+                <li class="doc-picker-item" onclick="selectDoc('{{ doc._id }}', this)">
+                    <i class="fas fa-file-alt"></i> {{ doc.filename }}
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <button class="btn btn-primary" onclick="generateMap()" style="width: 100%; padding: 1rem;">
+            <i class="fas fa-rocket"></i> Generate AI Mind Map
+        </button>
+
+        <div class="input-section"
+            style="margin-top: auto; border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">
+            <label style="font-size: 0.8rem; color: var(--text-dim);">EXPORT OPTIONS</label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                <button class="btn btn-secondary btn-sm" onclick="exportData('png')"><i class="fas fa-image"></i>
+                    PNG</button>
+                <button class="btn btn-secondary btn-sm" onclick="exportData('json')"><i class="fas fa-code"></i>
+                    JSON</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Canvas -->
+    <div class="mindmap-canvas-container glass">
+        <div id="map-container"></div>
+
+        <!-- Toolbar -->
+        <div class="map-toolbar">
+            <button class="toolbar-btn" onclick="mind.centerRoot()" title="Center Map"><i
+                    class="fas fa-bullseye"></i></button>
+            <button class="toolbar-btn" onclick="mind.zoomIn()" title="Zoom In"><i class="fas fa-plus"></i></button>
+            <button class="toolbar-btn" onclick="mind.zoomOut()" title="Zoom Out"><i class="fas fa-minus"></i></button>
+        </div>
+
+        <!-- Search -->
+        <div class="map-search">
+            <input type="text" id="map-search-field" class="search-input" placeholder="Search nodes..."
+                onkeyup="handleSearch(event)">
+            <i class="fas fa-search"></i>
+        </div>
+
+        <!-- Loader -->
+        <div id="map-loader" class="loader-overlay">
+            <div class="loader">AI ARCHITECTING MAP...</div>
+            <p style="font-size: 0.8rem; color: var(--accent-color);">Identifying key concepts & hierarchies</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    let mind = null;
+    let selectedDocId = null;
+    let currentSource = 'text';
+
+    function initMap(data) {
+        const options = {
+            el: '#map-container',
+            direction: MindElixir.SIDE,
+            data: data,
+            draggable: true,
+            contextMenu: true,
+            toolBar: true,
+            nodeMenu: true,
+            keypress: true,
+            locale: 'en',
+            theme: {
+                name: 'Dark',
+                palette: ['#38bdf8', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'],
+                cssVar: {
+                    '--main-color-1': '#38bdf8',
+                    '--main-bg-color': '#0f172a',
+                    '--main-color': '#f8fafc',
+                }
+            }
+        };
+        mind = new MindElixir(options);
+        mind.init();
+    }
+
+    // Default welcome data
+    const welcomeData = {
+        nodeData: {
+            id: 'root',
+            topic: 'Build Your Mind Map',
+            root: true,
+            children: [
+                { id: '1', topic: 'Text Input', children: [{ id: '1.1', topic: 'Paste notes' }] },
+                { id: '2', topic: 'File Upload', children: [{ id: '2.1', topic: 'Select PDF/DOCX' }] },
+                { id: '3', topic: 'AI Analysis', children: [{ id: '3.1', topic: 'Auto hierarchy' }] }
+            ]
+        }
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+        initMap(welcomeData);
+    });
+
+    function setSource(src) {
+        currentSource = src;
+        document.querySelectorAll('.source-tab').forEach(t => t.classList.remove('active'));
+        event.target.classList.add('active');
+
+        document.getElementById('text-input-mode').style.display = src === 'text' ? 'flex' : 'none';
+        document.getElementById('doc-input-mode').style.display = src === 'doc' ? 'flex' : 'none';
+    }
+
+    function selectDoc(id, el) {
+        selectedDocId = id;
+        document.querySelectorAll('.doc-picker-item').forEach(i => i.classList.remove('selected'));
+        el.classList.add('selected');
+    }
+
+    async function generateMap() {
+        const loader = document.getElementById('map-loader');
+        const payload = { source_type: currentSource };
+
+        if (currentSource === 'text') {
+            payload.text = document.getElementById('note-content').value;
+            payload.name = document.getElementById('map-name').value || 'My Note';
+            if (!payload.text) return alert("Please enter some text!");
+        } else {
+            payload.doc_id = selectedDocId;
+            if (!payload.doc_id) return alert("Please select a document!");
+        }
+
+        loader.style.display = 'flex';
+
+        try {
+            const res = await fetch('/api/mindmap/pro', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            loader.style.display = 'none';
+
+            if (data.error) {
+                alert(data.error);
+                return;
+            }
+
+            // Replace map data
+            mind.nodeData = data.nodeData;
+            mind.refresh();
+        } catch (e) {
+            loader.style.display = 'none';
+            alert("AI generation failed. Server error.");
+        }
+    }
+
+    function handleSearch(e) {
+        const query = e.target.value.toLowerCase();
+        if (!query) return;
+
+        // Basic search: Find node and focus
+        const nodes = document.querySelectorAll('tpc');
+        nodes.forEach(node => {
+            if (node.innerText.toLowerCase().includes(query)) {
+                node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                node.style.boxShadow = '0 0 15px var(--accent-color)';
+                setTimeout(() => node.style.boxShadow = '', 2000);
+            }
+        });
+    }
+
+    function exportData(type) {
+        if (type === 'json') {
+            const data = mind.getData();
+            const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'mindmap.json';
+            a.click();
+        } else {
+            alert("PNG Export feature requires Mind-Elixir Export plugin. For now, please use Browser Print/Save as PDF!");
+        }
+    }
+</script>
+{% endblock %}
