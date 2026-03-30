@@ -505,14 +505,17 @@ def upload_document():
         flash('Error processing document.')
         return redirect(url_for('workspace'))
 
-@app.route('/api/workspace/generate', methods=['POST'])
+@app.route('/api/workspace/generate', methods=['GET', 'POST'])
 @login_required
 def workspace_generate():
+    if request.method == 'GET':
+        return redirect(url_for('workspace'))
+        
     if not client_ai:
         return jsonify({'error': 'AI not configured.'}), 500
         
     doc_id = request.json.get('doc_id')
-    type_requested = request.json.get('type') # 'mindmap', 'flowchart', 'flashcards'
+    type_requested = request.json.get('type') # 'mindmap', 'flowchart', 'flashcards', 'study_guide', 'faq'
     
     doc = documents_collection.find_one({'_id': ObjectId(doc_id), 'user_id': current_user.id})
     if not doc:
@@ -523,13 +526,17 @@ def workspace_generate():
     system_prompts = {
         'mindmap': "You are an expert at information visualization. Output ONLY valid Mermaid.js mindmap code (graph TD). Use DOUBLE QUOTES for labels: A[\"Label\"]. Avoid [],(),{},# inside labels. Use provided text AS ONLY SOURCE OF TRUTH.",
         'flowchart': "You are a process visualization expert. Output ONLY valid Mermaid.js flowchart code (graph LR). Use DOUBLE QUOTES for labels: A[\"Label\"]. Avoid [],(),{},# inside labels. Use provided text AS ONLY SOURCE OF TRUTH.",
-        'flashcards': "You are a memory specialist. Output 5-8 flashcards as a JSON array of objects with 'question' and 'answer' fields. Use provided text AS ONLY SOURCE OF TRUTH."
+        'flashcards': "You are a memory specialist. Output 5-8 flashcards as a JSON array of objects with 'question' and 'answer' fields. Use provided text AS ONLY SOURCE OF TRUTH.",
+        'study_guide': "You are an academic tutor. Create a comprehensive study guide with key definitions, concepts, and a summary. Use Markdown.",
+        'faq': "You are an educator. Create 5-10 Frequently Asked Questions and their detailed answers based on the text. Use Markdown."
     }
     
     prompt_templates = {
         'mindmap': f"Create a comprehensive mind map of the following text:\n\n{content}",
         'flowchart': f"Convert the logic or process in the following text into a flowchart:\n\n{content}",
-        'flashcards': f"Generate high-quality study flashcards based on the following text:\n\n{content}"
+        'flashcards': f"Generate high-quality study flashcards based on the following text:\n\n{content}",
+        'study_guide': f"Create a detailed study guide for the following text:\n\n{content}",
+        'faq': f"Create an FAQ based on the following text:\n\n{content}"
     }
     
     try:
@@ -541,7 +548,7 @@ def workspace_generate():
             ],
             temperature=0.1
         )
-        ai_resp = sanitize_mermaid(response.choices[0].message.content.strip()) if type_requested != 'flashcards' else response.choices[0].message.content.strip()
+        ai_resp = sanitize_mermaid(response.choices[0].message.content.strip()) if type_requested in ['mindmap', 'flowchart'] else response.choices[0].message.content.strip()
         
         if type_requested == 'flashcards':
             if "```json" in ai_resp:
@@ -558,6 +565,35 @@ def workspace_generate():
     except Exception as e:
         print(f"Workspace AI Error: {e}")
         return jsonify({'error': 'AI failed to process the document.'}), 500
+
+@app.route('/api/workspace/chat', methods=['POST'])
+@login_required
+def workspace_chat():
+    if not client_ai:
+        return jsonify({'error': 'AI not configured.'}), 500
+        
+    doc_id = request.json.get('doc_id')
+    user_message = request.json.get('message')
+    
+    doc = documents_collection.find_one({'_id': ObjectId(doc_id), 'user_id': current_user.id})
+    if not doc:
+        return jsonify({'error': 'Document not found.'}), 404
+        
+    content = doc['content'][:15000]
+    
+    try:
+        response = client_ai.chat.completions.create(
+            model="Meta-Llama-3.1-8B-Instruct",
+            messages=[
+                {"role": "system", "content": f"You are a helpful AI assistant grounded in the following document: {doc['filename']}. Answer questions ONLY based on this content:\n\n{content}"},
+                {"role": "user", "content": user_message}
+            ],
+            temperature=0.1
+        )
+        return jsonify({'response': response.choices[0].message.content})
+    except Exception as e:
+        print(f"Workspace Chat Error: {e}")
+        return jsonify({'error': 'AI failed to answer.'}), 500
 
 @app.route('/delete_document/<doc_id>')
 @login_required

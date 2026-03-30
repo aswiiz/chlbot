@@ -2,114 +2,28 @@
 
 {% block head %}
 <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.5/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>mermaid.initialize({ startOnLoad: false, theme: 'dark' });</script>
-{% endblock %}
-
-{% block content %}
-<div class="workspace-wrapper fade-in">
-    <div class="workspace-sidebar glass">
-        <div class="sidebar-header">
-            <h2><i class="fas fa-folder-open"></i> Sources</h2>
-            <button class="btn btn-sm btn-primary" onclick="toggleModal('uploadModal')">
-                <i class="fas fa-upload"></i> Upload
-            </button>
-        </div>
-
-        <ul class="doc-list">
-            {% for doc in documents %}
-            <li class="doc-item glass" id="doc-{{ doc._id }}"
-                onclick="selectDocument('{{ doc._id }}', '{{ doc.filename }}')">
-                <div class="doc-info">
-                    <i class="fas fa-file-pdf"></i>
-                    <span>{{ doc.filename }}</span>
-                </div>
-                <a href="{{ url_for('delete_document', doc_id=doc._id) }}" class="delete-doc"
-                    onclick="event.stopPropagation()">
-                    <i class="fas fa-trash"></i>
-                </a>
-            </li>
-            {% endfor %}
-            {% if not documents %}
-            <p class="empty-docs">No documents uploaded yet.</p>
-            {% endif %}
-        </ul>
-    </div>
-
-    <div class="workspace-main">
-        <div id="welcome-message" class="workspace-empty glass">
-            <i class="fas fa-brain fa-3x"></i>
-            <h2>AI Study Workspace</h2>
-            <p>Select a document from the sidebar to start generating Mind Maps, Flowcharts, and Flashcards with AI.</p>
-        </div>
-
-        <div id="workspace-active" class="workspace-active" style="display: none;">
-            <div class="active-header glass">
-                <h2 id="active-doc-name">Document Name</h2>
-                <div class="action-buttons">
-                    <button class="btn btn-secondary" onclick="generate('mindmap')">
-                        <i class="fas fa-project-diagram"></i> Mind Map
-                    </button>
-                    <button class="btn btn-secondary" onclick="generate('flowchart')">
-                        <i class="fas fa-random"></i> Flow Chart
-                    </button>
-                    <button class="btn btn-secondary" onclick="generate('flashcards')">
-                        <i class="fas fa-bolt"></i> Flashcards
-                    </button>
-                </div>
-            </div>
-
-            <div id="output-container" class="output-area glass">
-                <div id="output-loader" class="loader" style="display: none;">AI IS THINKING...</div>
-                <div id="mermaid-output" class="mermaid-container"></div>
-                <div id="flashcard-output" class="flashcards-grid"></div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Upload Modal -->
-<div id="uploadModal" class="modal">
-    <div class="modal-content glass">
-        <h2>Upload Study Source</h2>
-        <p>Upload a PDF or TXT file to analyze.</p>
-        <form action="{{ url_for('upload_document') }}" method="POST" enctype="multipart/form-data">
-            <div class="form-group">
-                <input type="file" name="file" accept=".pdf,.txt" required class="glass"
-                    style="padding: 2rem; border: 2px dashed var(--glass-border); text-align: center;">
-            </div>
-            <div class="modal-actions">
-                <button type="button" class="btn btn-secondary" onclick="toggleModal('uploadModal')">Cancel</button>
-                <button type="submit" class="btn btn-primary">Process with AI</button>
-            </div>
-        </form>
-    </div>
-</div>
-
 <style>
-    .workspace-wrapper {
+    .workspace-layout {
         display: grid;
-        grid-template-columns: 300px 1fr;
-        gap: 2rem;
+        grid-template-columns: 280px 1fr 350px;
+        gap: 1.5rem;
         height: calc(100vh - 120px);
         margin-top: 1rem;
     }
 
-    .workspace-sidebar {
+    /* Column 1: Sources */
+    .sources-panel {
         padding: 1.5rem;
         display: flex;
         flex-direction: column;
         overflow-y: auto;
     }
 
-    .sidebar-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 2rem;
-    }
-
     .doc-list {
         list-style: none;
+        margin-top: 1.5rem;
         display: flex;
         flex-direction: column;
         gap: 0.8rem;
@@ -118,268 +32,423 @@
     .doc-item {
         padding: 1rem;
         cursor: pointer;
+        transition: all 0.3s;
+        border: 1px solid transparent;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        transition: all 0.3s;
-        border: 1px solid transparent;
+        background: rgba(255, 255, 255, 0.03);
     }
 
-    .doc-item:hover {
-        background: rgba(255, 255, 255, 0.1);
+    .doc-item:hover,
+    .doc-item.active {
+        background: rgba(56, 189, 248, 0.1);
+        border-color: var(--accent-color);
         transform: translateX(5px);
     }
 
-    .doc-item.active {
-        border-color: var(--accent-color);
-        background: rgba(56, 189, 248, 0.1);
-    }
-
-    .doc-info {
+    /* Column 2: Main Stage */
+    .stage-panel {
         display: flex;
-        align-items: center;
-        gap: 0.8rem;
-        font-size: 0.9rem;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .delete-doc {
-        color: var(--text-dim);
-        opacity: 0.5;
-        transition: opacity 0.3s;
-    }
-
-    .delete-doc:hover {
-        color: #ff4d4d;
-        opacity: 1;
-    }
-
-    .workspace-main {
+        flex-direction: column;
         overflow: hidden;
     }
 
-    .workspace-empty {
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        text-align: center;
-        padding: 3rem;
-        gap: 1rem;
-    }
-
-    .workspace-active {
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
-    }
-
-    .active-header {
-        padding: 1.5rem;
+    .stage-header {
+        padding: 1.2rem;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        border-bottom: 1px solid var(--glass-border);
     }
 
-    .action-buttons {
+    .tool-tabs {
         display: flex;
-        gap: 0.8rem;
+        gap: 0.5rem;
+        background: rgba(0, 0, 0, 0.2);
+        padding: 0.3rem;
+        border-radius: 12px;
     }
 
-    .output-area {
+    .tool-tab {
+        padding: 0.5rem 0.8rem;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-dim);
+        transition: all 0.3s;
+    }
+
+    .tool-tab.active {
+        background: var(--accent-color);
+        color: var(--primary-bg);
+    }
+
+    .stage-content {
         flex: 1;
         overflow-y: auto;
         padding: 2rem;
+        position: relative;
+    }
+
+    /* Column 3: Chat & Notes */
+    .chat-panel {
         display: flex;
         flex-direction: column;
-        position: relative;
+        gap: 1.5rem;
+        overflow: hidden;
+    }
+
+    .grounded-chat {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background: rgba(15, 23, 42, 0.4);
+    }
+
+    .chat-messages {
+        flex: 1;
+        padding: 1rem;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .chat-input-area {
+        padding: 1rem;
+        display: flex;
+        gap: 0.5rem;
+        border-top: 1px solid var(--glass-border);
+    }
+
+    .notebook-panel {
+        height: 250px;
+        padding: 1.2rem;
+        overflow-y: auto;
+    }
+
+    /* Components */
+    .markdown-body {
+        line-height: 1.6;
+        color: var(--text-main);
+    }
+
+    .markdown-body h1,
+    .markdown-body h2 {
+        color: var(--accent-color);
+        margin-top: 1rem;
     }
 
     .flashcards-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 1.5rem;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 1rem;
     }
 
-    .flash-card {
-        aspect-ratio: 4/3;
-        perspective: 1000px;
-        cursor: pointer;
+    .msg {
+        padding: 0.8rem;
+        border-radius: 12px;
+        font-size: 0.9rem;
+        max-width: 90%;
     }
 
-    .card-inner {
-        position: relative;
-        width: 100%;
+    .ai-msg {
+        background: rgba(56, 189, 248, 0.1);
+        align-self: flex-start;
+        border-left: 3px solid var(--accent-color);
+    }
+
+    .user-msg {
+        background: var(--accent-color);
+        color: var(--primary-bg);
+        align-self: flex-end;
+    }
+
+    .empty-prompt {
         height: 100%;
-        text-align: center;
-        transition: transform 0.6s;
-        transform-style: preserve-3d;
-    }
-
-    .flash-card.flipped .card-inner {
-        transform: rotateY(180deg);
-    }
-
-    .card-front,
-    .card-back {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        backface-visibility: hidden;
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        padding: 2rem;
-        border-radius: 12px;
-    }
-
-    .card-front {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid var(--glass-border);
-    }
-
-    .card-back {
-        background: var(--accent-color);
-        color: var(--primary-bg);
-        transform: rotateY(180deg);
-    }
-
-    /* Modal Styles */
-    .modal {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.8);
-        z-index: 1000;
-        justify-content: center;
-        align-items: center;
-    }
-
-    .modal-content {
-        width: 90%;
-        max-width: 500px;
-        padding: 3rem;
-    }
-
-    .loader {
-        color: var(--accent-color);
-        font-weight: 800;
-        letter-spacing: 2px;
-        animation: pulse 1.5s infinite;
+        opacity: 0.6;
         text-align: center;
-        margin: auto;
     }
 
-    @keyframes pulse {
+    input[type="text"],
+    textarea {
+        width: 100%;
+        padding: 0.8rem;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        color: white;
+        outline: none;
+    }
 
-        0%,
-        100% {
-            opacity: 0.4;
-        }
-
-        50% {
-            opacity: 1;
-        }
+    .save-note-btn {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        z-index: 10;
     }
 </style>
+{% endblock %}
+
+{% block content %}
+<div class="workspace-layout fade-in">
+    <!-- Sources Column -->
+    <div class="sources-panel glass">
+        <div class="sidebar-header">
+            <h3><i class="fas fa-layer-group"></i> Sources</h3>
+            <button class="btn btn-sm btn-primary" onclick="toggleModal('uploadModal')">
+                <i class="fas fa-plus"></i>
+            </button>
+        </div>
+        <ul class="doc-list">
+            {% for doc in documents %}
+            <li class="doc-item glass" id="doc-{{ doc._id }}"
+                onclick="selectDocument('{{ doc._id }}', '{{ doc.filename }}')">
+                <div class="doc-info" style="display: flex; align-items: center; gap: 10px; overflow: hidden;">
+                    <i class="fas fa-file-alt" style="color: var(--accent-color);"></i>
+                    <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ doc.filename
+                        }}</span>
+                </div>
+                <a href="{{ url_for('delete_document', doc_id=doc._id) }}" onclick="event.stopPropagation()"><i
+                        class="fas fa-times" style="font-size: 0.8rem; opacity: 0.5;"></i></a>
+            </li>
+            {% endfor %}
+        </ul>
+        {% if not documents %}
+        <div class="empty-prompt" style="padding-top: 2rem;">
+            <p>No sources yet.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Main Stage Column -->
+    <div class="stage-panel glass">
+        <div id="stage-welcome" class="empty-prompt">
+            <i class="fas fa-book-reader fa-3x" style="margin-bottom: 1rem; color: var(--accent-color);"></i>
+            <h2>NotebookLM Workspace</h2>
+            <p>Select a source to start your research journey.</p>
+        </div>
+
+        <div id="stage-active" style="display: none; flex-direction: column; height: 100%;">
+            <div class="stage-header">
+                <h3 id="active-doc-title" style="font-size: 1rem;">Document</h3>
+                <div class="tool-tabs">
+                    <div class="tool-tab active" onclick="switchTool('mindmap')">Mind Map</div>
+                    <div class="tool-tab" onclick="switchTool('flowchart')">Flow</div>
+                    <div class="tool-tab" onclick="switchTool('study_guide')">Guide</div>
+                    <div class="tool-tab" onclick="switchTool('faq')">FAQ</div>
+                    <div class="tool-tab" onclick="switchTool('flashcards')">Cards</div>
+                </div>
+            </div>
+
+            <div class="stage-content">
+                <button class="btn btn-sm btn-secondary save-note-btn" onclick="saveToNotebook()">
+                    <i class="fas fa-bookmark"></i> Save to Notes
+                </button>
+                <div id="stage-loader" class="loader" style="display: none; margin-top: 5rem;">AI AGENTS SYNCING...
+                </div>
+                <div id="output-view"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat & Notebook Column -->
+    <div class="chat-panel">
+        <div class="grounded-chat glass">
+            <div
+                style="padding: 1rem; border-bottom: 1px solid var(--glass-border); font-weight: 600; font-size: 0.9rem;">
+                <i class="fas fa-robot"></i> Source Chat
+            </div>
+            <div id="chat-messages" class="chat-messages">
+                <div class="msg ai-msg">Select a source to ask questions about it.</div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" placeholder="Ask about this source..."
+                    onkeypress="if(event.key==='Enter') sendChat()">
+                <button class="btn btn-primary" onclick="sendChat()"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+
+        <div class="notebook-panel glass">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3 style="font-size: 0.9rem;"><i class="fas fa-pen-nib"></i> Notebook</h3>
+                <button class="btn btn-sm btn-secondary" onclick="clearNotebook()"
+                    style="font-size: 0.7rem;">Clear</button>
+            </div>
+            <div id="notebook-content" style="font-size: 0.85rem; color: var(--text-dim);">
+                Your saved insights will appear here.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Modal -->
+<div id="uploadModal" class="modal">
+    <div class="modal-content glass">
+        <h2>Add Source</h2>
+        <form action="{{ url_for('upload_document') }}" method="POST" enctype="multipart/form-data">
+            <div class="form-group" style="margin-top: 1.5rem;">
+                <input type="file" name="file" accept=".pdf,.txt" required>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="toggleModal('uploadModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">Upload</button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <script>
     let currentDocId = null;
+    let currentTool = 'mindmap';
 
     function toggleModal(id) {
-        const modal = document.getElementById(id);
-        modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
+        const m = document.getElementById(id);
+        m.style.display = m.style.display === 'flex' ? 'none' : 'flex';
     }
 
     function selectDocument(id, name) {
         currentDocId = id;
-        document.querySelectorAll('.doc-item').forEach(i => i.classList.remove('active'));
+        document.querySelectorAll('.doc-item').forEach(el => el.classList.remove('active'));
         document.getElementById('doc-' + id).classList.add('active');
 
-        document.getElementById('welcome-message').style.display = 'none';
-        document.getElementById('workspace-active').style.display = 'flex';
-        document.getElementById('active-doc-name').innerText = name;
+        document.getElementById('stage-welcome').style.display = 'none';
+        document.getElementById('stage-active').style.display = 'flex';
+        document.getElementById('active-doc-title').innerText = name;
 
-        // Clear previous output
-        document.getElementById('mermaid-output').innerHTML = '';
-        document.getElementById('flashcard-output').innerHTML = '';
+        // Reset chat
+        document.getElementById('chat-messages').innerHTML = `<div class="msg ai-msg">I'm ready. Ask me anything about <b>${name}</b>.</div>`;
+
+        runTool();
     }
 
-    function generate(type) {
+    function switchTool(tool) {
+        currentTool = tool;
+        document.querySelectorAll('.tool-tab').forEach(el => el.classList.remove('active'));
+        event.target.classList.add('active');
+        runTool();
+    }
+
+    async function runTool() {
         if (!currentDocId) return;
 
-        const loader = document.getElementById('output-loader');
-        const mermaidCont = document.getElementById('mermaid-output');
-        const flashCont = document.getElementById('flashcard-output');
+        const loader = document.getElementById('stage-loader');
+        const view = document.getElementById('output-view');
 
         loader.style.display = 'block';
-        mermaidCont.innerHTML = '';
-        flashCont.innerHTML = '';
+        view.innerHTML = '';
 
-        fetch('/api/workspace/generate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ doc_id: currentDocId, type: type })
-        })
-            .then(res => res.json())
-            .then(data => {
-                loader.style.display = 'none';
-                if (data.error) {
-                    alert(data.error);
-                    return;
-                }
-
-                if (type === 'flashcards') {
-                    renderFlashcards(data.result);
-                } else {
-                    renderMermaid(data.result);
-                }
-            })
-            .catch(err => {
-                loader.style.display = 'none';
-                alert("AI Error: Connection lost.");
-            });
-    }
-
-    async function renderMermaid(code) {
-        const cont = document.getElementById('mermaid-output');
-        cont.innerHTML = '';
-        const id = 'mermaid-' + Math.floor(Math.random() * 10000);
         try {
-            const { svg } = await mermaid.render(id, code);
-            cont.innerHTML = svg;
-        } catch (err) {
-            console.error("Mermaid Render Error", err);
-            cont.innerHTML = '<div class="error">AI produced invalid diagram syntax. Try regenerating.</div>';
+            const res = await fetch('/api/workspace/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ doc_id: currentDocId, type: currentTool })
+            });
+            const data = await res.json();
+            loader.style.display = 'none';
+
+            if (data.error) {
+                view.innerHTML = `<div class="error">${data.error}</div>`;
+                return;
+            }
+
+            if (currentTool === 'mindmap' || currentTool === 'flowchart') {
+                const id = 'mermaid-' + Math.floor(Math.random() * 10000);
+                const { svg } = await mermaid.render(id, data.result);
+                view.innerHTML = `<div class="mermaid-container glass" style="padding:1rem;">${svg}</div>`;
+            } else if (currentTool === 'flashcards') {
+                renderFlashcards(data.result);
+            } else {
+                view.innerHTML = `<div class="markdown-body glass" style="padding:2rem;">${marked.parse(data.result)}</div>`;
+            }
+        } catch (e) {
+            loader.style.display = 'none';
+            view.innerHTML = `<div class="error">Connection failed.</div>`;
         }
     }
 
     function renderFlashcards(cards) {
-        const cont = document.getElementById('flashcard-output');
-        let html = '';
-        cards.forEach(card => {
+        const view = document.getElementById('output-view');
+        let html = '<div class="flashcards-grid">';
+        cards.forEach(c => {
             html += `
-                <div class="flash-card" onclick="this.classList.toggle('flipped')">
+                <div class="flash-card" style="height: 180px;" onclick="this.classList.toggle('flipped')">
                     <div class="card-inner">
-                        <div class="card-front">
-                            <p>${card.question}</p>
+                        <div class="card-front glass">
+                            <p style="font-weight:600;">${c.question}</p>
                         </div>
-                        <div class="card-back">
-                            <p>${card.answer}</p>
+                        <div class="card-back glass">
+                            <p>${c.answer}</p>
                         </div>
                     </div>
                 </div>
             `;
         });
-        cont.innerHTML = html;
+        html += '</div>';
+        view.innerHTML = html;
+    }
+
+    async function sendChat() {
+        const input = document.getElementById('chat-input');
+        const msg = input.value.trim();
+        if (!msg || !currentDocId) return;
+
+        addMsg(msg, 'user-msg');
+        input.value = '';
+
+        try {
+            const res = await fetch('/api/workspace/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ doc_id: currentDocId, message: msg })
+            });
+            const data = await res.json();
+            if (data.response) addMsg(data.response, 'ai-msg');
+            else addMsg("Sorry, I encountered an error.", 'ai-msg');
+        } catch (e) {
+            addMsg("Connection lost.", 'ai-msg');
+        }
+    }
+
+    function addMsg(text, type) {
+        const cont = document.getElementById('chat-messages');
+        const div = document.createElement('div');
+        div.className = 'msg ' + type;
+        div.innerText = text;
+        cont.appendChild(div);
+        cont.scrollTop = cont.scrollHeight;
+    }
+
+    function saveToNotebook() {
+        const view = document.getElementById('output-view');
+        const notebook = document.getElementById('notebook-content');
+        const title = document.getElementById('active-doc-title').innerText;
+
+        if (notebook.innerText.includes('Your saved insights')) notebook.innerHTML = '';
+
+        const noteDiv = document.createElement('div');
+        noteDiv.className = 'glass';
+        noteDiv.style = 'padding: 1rem; margin-bottom: 1rem; border-left: 2px solid var(--accent-color);';
+        noteDiv.innerHTML = `<strong>${title} (${currentTool.toUpperCase()})</strong><br>${view.innerHTML}`;
+
+        // Remove style and script tags if any to keep notebook clean
+        noteDiv.querySelectorAll('button').forEach(b => b.remove());
+
+        notebook.prepend(noteDiv);
+        alert("Saved to Notebook!");
+    }
+
+    function clearNotebook() {
+        if (confirm("Clear all notes?")) {
+            document.getElementById('notebook-content').innerHTML = 'Your saved insights will appear here.';
+        }
     }
 </script>
 {% endblock %}
