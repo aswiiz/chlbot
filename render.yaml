@@ -1,19 +1,13 @@
 services:
   - type: web
-    name: cognitive-learning-hub
+    name: clh-platform
     env: python
-    region: singapore
-    plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
     envVars:
-      - key: SECRET_KEY
-        generateValue: true
-      - key: MONGO_URI
-        sync: false
-      - key: SAMBANOVA_API_KEY
-        sync: false
-      - key: HF_TOKEN
+      - key: MONGODB_URI
         sync: false
       - key: OPENAI_API_KEY
+        sync: false
+      - key: SAMBANOVA_API_KEY
         sync: false
