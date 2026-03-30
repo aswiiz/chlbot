@@ -619,7 +619,7 @@
             topicFilterGroup.style.display = 'none';
         } else {
             topicFilterGroup.style.display = 'flex';
-            const filteredTopics = allTopics.filter(t => t.subject === subject);
+            const filteredTopics = allTopics.filter(t => t.subject.toLowerCase() === subject.toLowerCase());
             filteredTopics.forEach(t => {
                 const opt = document.createElement('option');
                 opt.value = t.id;
