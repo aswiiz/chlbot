@@ -107,8 +107,11 @@ def get_ai_summary(text):
         )
         return response.choices[0].message.content
     except Exception as e:
-        print(f"SambaNova Error: {e}")
-        return "Failed to generate AI summary."
+        error_msg = str(e)
+        print(f"SambaNova Error: {error_msg}")
+        if "rate limit" in error_msg.lower():
+            return "AI Rate Limit Reached (429). Please wait a few minutes before trying again."
+        return f"Failed to generate AI summary. (Error: {error_msg})"
 
 def sanitize_mermaid(text):
     """Clean up AI-generated Mermaid code."""
@@ -487,8 +490,8 @@ def pre_load_subjects():
             for filename in os.listdir(subj_path):
                 file_path = os.path.join(subj_path, filename)
                 if os.path.isfile(file_path):
-                    # Extract module name from filename (e.g. modul2.txt -> modul2)
-                    topic_name = os.path.splitext(filename)[0]
+                    # Extract module name from filename (e.g. photonics.txt -> Photonics)
+                    topic_name = os.path.splitext(filename)[0].title()
                     
                     # Check if topic already exists for user
                     if not topics_collection.find_one({'user_id': current_user.id, 'name': topic_name, 'subject': subj}):
@@ -507,7 +510,7 @@ def pre_load_subjects():
                         except Exception as e:
                             print(f"Error reading {file_path}: {e}")
                             
-    flash('Syllabus documents loaded successfully from sources!')
+    flash(f'Syllabus documents loaded successfully from sources!')
     return redirect(url_for('dashboard'))
 
 @app.route('/review_topic/<topic_id>', methods=['GET', 'POST'])
