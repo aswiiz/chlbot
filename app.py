@@ -144,7 +144,75 @@ def sanitize_mermaid(text):
         
     return text
 
+PHOTONICS_MAP = """
+graph TD
+    Root["PHOTONICS"]
+    
+    Root --> C1["1. Introduction"]
+    C1 --> C1a["Definition"]
+    C1 --> C1b["Optics"]
+    C1 --> C1c["Quantum Mechanics"]
+    C1 --> C1d["Electromagnetism"]
+    
+    Root --> C2["2. Advantages over Electronics"]
+    C2 --> C2a["High Bandwidth"]
+    C2 --> C2b["Low Power Consumption"]
+    C2 --> C2c["Increased Security"]
+    C2 --> C2d["Higher Reliability"]
+    
+    Root --> C3["3. Photodetectors"]
+    C3 --> C3a["Types"]
+    C3a --> C3a1["Junction Photodiode"]
+    C3a --> C3a2["PIN Photodiode"]
+    C3a --> C3a3["Avalanche Photodiode"]
+    C3a --> C3a4["Schottky Photodiode"]
+    C3a --> C3a5["Phototransistors"]
+    C3 --> C3b["Requirements"]
+    C3b --> C3b1["High Sensitivity"]
+    C3b --> C3b2["Short Response Time"]
+    C3b --> C3b3["Low Bias Voltage"]
+    
+    Root --> C4["4. Solar Cells"]
+    C4 --> C4a["Photovoltaic Effect"]
+    C4 --> C4b["I-V Characteristics"]
+    C4b --> C4b1["Open Circuit Voltage"]
+    C4b --> C4b2["Short Circuit Current"]
+    C4b --> C4b3["Maximum Power Point"]
+    C4b --> C4b4["Fill Factor"]
+    C4b --> C4b5["Efficiency"]
+    C4 --> C4c["Configuration"]
+    C4c --> C4c1["Series Stringing"]
+    C4c --> C4c2["Parallel Stringing"]
+    C4 --> C4d["Pros and Cons"]
+    C4d --> C4d1["No Pollution"]
+    C4d --> C4d2["Low Maintenance"]
+    C4d --> C4d3["Brittle Material"]
+    C4d --> C4d4["Space Intensive"]
+    
+    Root --> C5["5. Light Emitting Diodes (LED)"]
+    C5 --> C5a["Electron-hole Recombination"]
+    C5 --> C5b["Materials and Color"]
+    C5b --> C5b1["GaAs – Infrared"]
+    C5b --> C5b2["GaAsP – Yellow"]
+    C5b --> C5b3["GaP – Green"]
+    C5 --> C5c["Features"]
+    C5c --> C5c1["Point Source"]
+    C5c --> C5c2["Fast Switching"]
+    C5c --> C5c3["Long Lifespan"]
+    
+    Root --> C6["6. Applications"]
+    C6 --> C6a["Communication"]
+    C6 --> C6b["Medicine"]
+    C6 --> C6c["Consumer Electronics"]
+    C6 --> C6d["Satellites"]
+    C6 --> C6e["Automotive Lighting"]
+"""
+
 def get_ai_mindmap(topics_data, context="global", target_name=None):
+    # Static override for Photonics while AI is rate-limited
+    if target_name and "photonics" in target_name.lower():
+        return PHOTONICS_MAP
+        
     if not client_ai:
         return "graph TD\nRoot[Cognitive Hub]"
     
