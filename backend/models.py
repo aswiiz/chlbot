@@ -1,17 +1,19 @@
 from pydantic import BaseModel, Field
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Any
 
 class Topic(BaseModel):
-    name: str
-    confidence: int = Field(1, ge=1, le=5)
+    title: str
+    note: Optional[str] = None
+    confidence: int = Field(3, ge=1, le=5)  # 1: Red, 3: Yellow, 5: Green
     last_reviewed: datetime = Field(default_factory=datetime.utcnow)
     decay_status: str = "Strong"
-    score: float = 5.0 # normalized score?
+    children: List['Topic'] = []
+
+Topic.update_forward_refs()
 
 class Subject(BaseModel):
     name: str
-    syllabus: List[str] = []
     topics: List[Topic] = []
 
 class User(BaseModel):

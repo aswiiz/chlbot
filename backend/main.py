@@ -108,17 +108,24 @@ async def add_subject(subject: Subject):
 @app.get("/api/subjects/")
 async def get_subjects():
     subjects = await subjects_collection.find().to_list(100)
+    
+    def process_node(node):
+        last_rev = node.get("last_reviewed")
+        if last_rev:
+            if isinstance(last_rev, str):
+                last_rev = datetime.fromisoformat(last_rev)
+            status, score = calculate_decay_and_score(last_rev, node.get("confidence", 3))
+            node["decay_status"] = status
+            node["current_score"] = score
+        
+        for child in node.get("children", []):
+            process_node(child)
+
     for s in subjects:
         s["id"] = str(s["_id"])
         del s["_id"]
-        # Recalculate decay for each topic
-        for topic in s["topics"]:
-            status, score = calculate_decay_and_score(
-                datetime.fromisoformat(topic["last_reviewed"]) if isinstance(topic["last_reviewed"], str) else topic["last_reviewed"],
-                topic["confidence"]
-            )
-            topic["decay_status"] = status
-            topic["current_score"] = score
+        for topic in s.get("topics", []):
+            process_node(topic)
     return subjects
 
 @app.post("/api/subjects/{subject_name}/topics/")
