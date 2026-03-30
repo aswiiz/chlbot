@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 import PyPDF2
 import io
+import re
 
 load_dotenv()
 
@@ -108,6 +109,37 @@ def get_ai_summary(text):
         print(f"SambaNova Error: {e}")
         return "Failed to generate AI summary."
 
+def sanitize_mermaid(text):
+    """Clean up AI-generated Mermaid code."""
+    if not text:
+        return "graph TD\nRoot[\"Error\"]"
+    
+    # Remove markdown code blocks if present
+    if "```mermaid" in text:
+        text = text.split("```mermaid")[1].split("```")[0].strip()
+    elif "```" in text:
+        text = text.split("```")[1].split("```")[0].strip()
+    
+    # Sanitize labels: Mermaid labels are sensitive to certain chars
+    # We look for nodes with labels in brackets A["Label"]
+    def clean_label(match):
+        node_id = match.group(1)
+        label = match.group(2)
+        # Escape double quotes inside labels
+        label = label.replace('"', "'")
+        # Remove other problematic symbols
+        label = re.sub(r'[\[\]\(\)\{\}#]', '', label)
+        return f'{node_id}["{label}"]'
+    
+    # Matches A["Label"] or A[Label]
+    text = re.sub(r'(\w+)\s*\["?(.*?)"?\]', clean_label, text)
+    
+    # Ensure it starts with graph TD if not specified
+    if "graph " not in text.lower():
+        text = "graph TD\n" + text
+        
+    return text
+
 def get_ai_mindmap(topics_data, context="global", target_name=None):
     if not client_ai:
         return "graph TD\nRoot[Cognitive Hub]"
@@ -146,10 +178,12 @@ def get_ai_mindmap(topics_data, context="global", target_name=None):
         1. Use 'graph TD' syntax.
         2. Start with a central node Root["{target_name if target_name else "Cognitive Hub"}"].
         3. Connect subjects to Root (if global) or themes to Root (if subject-specific).
-        4. Connect topics to their respective parents.
-        5. CRITICAL: Use DOUBLE QUOTES for all labels like: A["Label Name"].
-        6. CRITICAL: Avoid using symbols like [], (), {{}}, or # inside labels. Use plain text and dots only.
-        7. VERY IMPORTANT: Only output the Mermaid code, nothing else. No markdown blocks.
+        4. CRITICAL: Use the provided 'id' keys as the node identifiers in your graph code. 
+           Example: {topics_list[0]['id'] if topics_list else "T123"}["Topic Name"].
+        5. Connect topics to their respective parents.
+        6. CRITICAL: Use DOUBLE QUOTES for all labels like: A["Label Name"].
+        7. CRITICAL: Avoid using symbols like [], (), {{}}, or # inside labels.
+        8. VERY IMPORTANT: Only output the Mermaid code, nothing else. No markdown blocks.
         
         Topics: {json.dumps(topics_list)}
         """
@@ -163,14 +197,9 @@ def get_ai_mindmap(topics_data, context="global", target_name=None):
             ],
             temperature=0.1
         )
-        content = response.choices[0].message.content.strip()
-        if "```mermaid" in content:
-            content = content.split("```mermaid")[1].split("```")[0].strip()
-        elif "```" in content:
-            content = content.split("```")[1].split("```")[0].strip()
+        content = sanitize_mermaid(response.choices[0].message.content.strip())
         
-        # Final Sanitization: Ensure no raw brackets inside quoted strings or stray characters
-        # And ensure the AI actually produced a graph definition
+        # Ensure the AI actually produced a graph definition
         if "graph " not in content:
             return f"graph TD\nRoot[\"{target_name if target_name else 'Cognitive Hub'}\"]"
             
@@ -291,10 +320,10 @@ def api_mindmap():
     # Post-process to add colors (Mermaid styles)
     for topic in user_topics:
         tid = f"T{str(topic['_id'])[-4:]}"
-        # Some LLMs might not use the ID but the name for node IDs in Mermaid if not careful
-        # We try to style both just in case, or assume the AI followed the ID rule
-        color = COLOR_MAP.get(topic.get('confidence_score', 3), '#FFFFFF')
-        graph_code += f"\nstyle {tid} fill:{color},stroke:#333,stroke-width:2px,color:#000"
+        # ONLY add style if the node exists in the graph to avoid syntax errors
+        if tid in graph_code:
+            color = COLOR_MAP.get(topic.get('confidence_score', 3), '#FFFFFF')
+            graph_code += f"\nstyle {tid} fill:{color},stroke:#333,stroke-width:2px,color:#000"
         
     return jsonify({'graph': graph_code})
 
@@ -512,15 +541,9 @@ def workspace_generate():
             ],
             temperature=0.1
         )
-        ai_resp = response.choices[0].message.content.strip()
+        ai_resp = sanitize_mermaid(response.choices[0].message.content.strip()) if type_requested != 'flashcards' else response.choices[0].message.content.strip()
         
-        # Post-processing cleanup for AI results
-        if type_requested in ['mindmap', 'flowchart']:
-            if "```mermaid" in ai_resp:
-                ai_resp = ai_resp.split("```mermaid")[1].split("```")[0].strip()
-            elif "```" in ai_resp:
-                ai_resp = ai_resp.split("```")[1].split("```")[0].strip()
-        elif type_requested == 'flashcards':
+        if type_requested == 'flashcards':
             if "```json" in ai_resp:
                 ai_resp = ai_resp.split("```json")[1].split("```")[0].strip()
             elif "```" in ai_resp:
