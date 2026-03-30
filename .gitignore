@@ -1,33 +1,22 @@
-# Environment
 .env
-*.env
-
-# Python
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
-*.egg
-*.egg-info/
-dist/
-build/
-.eggs/
-
-# Virtual Environment
-venv/
+*.pyc
+*.pyo
+*.pyd
+.Python
 env/
-.venv/
-ENV/
-
-# Large files
-Archive.zip
-*.zip
-
-# IDE / OS
+venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.cache
+nosetests.xml
+coverage.xml
+*,cover
+.hypothesis/
+.pytest_cache/
 .vscode/
 .idea/
+node_modules/
 .DS_Store
-Thumbs.db
-
-# Logs
-*.log
