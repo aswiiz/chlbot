@@ -1,169 +1,117 @@
-📘 Complete Notes on Photonics
-
-🌐 Introduction
-- Photonics: Science of producing, controlling, and detecting photons.
-- Combines optics, electromagnetism, quantum mechanics.
-- Applications: Communication, data processing, transportation, medicine, biotechnology, lighting.
-
----
-
-⚡ Advantages of Photonic Devices over Electronic Devices
-Q. Mention the advantages of photonic devices over electronic devices.
-
-- High bandwidth → faster communication.
-- Lower power consumption → less heat, more efficiency.
-- Increased security → harder to intercept.
-- Higher reliability → less overheating, longer lifespan.
-
----
-
-🔦 Photodetectors
-Q. What is a photodetector? Give examples.
-
-- Device that converts light → electrical signal.
-- Requirements: High sensitivity, reliability, short response time, low bias voltage.
-- Examples: Photodiodes, Phototransistors.
-
----
-
-📍 Photodiodes
-Q. What is a photodiode?
-
-- Reverse-biased p-n junction that generates current proportional to light intensity.
-- Types: Junction, PIN, Avalanche, Schottky.
-
----
-
-Junction Photodiode
-Q. Explain construction and working of a junction photodiode.
-
-- Construction: Reverse-biased p-n junction, active area with anti-reflection coating, depletion region absorbs photons.
-- Working: Incident photons create electron-hole pairs → photocurrent + dark current.
-- Applications: CCDs, smoke detectors, TVs, remote controls, optical communication.
-
----
-
-PIN Photodiode
-Q. Explain the working of a PIN photodiode.
-
-- Structure: p-region, intrinsic region, n-region.
-- Intrinsic layer absorbs more photons → higher photocurrent.
-- Advantages: Better efficiency, speed, sensitivity.
-- Applications: RF/microwave switches, fibre optic networks, X-ray/gamma detection.
-
----
-
-☀️ Solar Cell
-Q. Explain the principle of a solar cell.
-
-- Works on photovoltaic effect: converts sunlight → electrical energy.
-
+Introduction
+Photonics: Science of producing, controlling, and detecting photons.
+Combines optics, electromagnetism, quantum mechanics.
+Applications: Communication, data processing, transportation, medicine, biotechnology, lighting.
+--------------------------------------------------------------------------------
+⚡ Advantages of Photonic Devices over Electronic Devices Q. Mention the advantages of photonic devices over electronic devices.
+High bandwidth → faster communication.
+Lower power consumption → less heat, more efficiency.
+Increased security → harder to intercept.
+Higher reliability → less overheating, longer lifespan.
+--------------------------------------------------------------------------------
+🔦 Photodetectors Q. What is a photodetector? Give examples.
+Device that converts light → electrical signal.
+Requirements: High sensitivity, reliability, short response time, low bias voltage.
+Examples: Photodiodes, Phototransistors.
+--------------------------------------------------------------------------------
+📍 Photodiodes Q. What is a photodiode?
+Reverse-biased p-n junction that generates current proportional to light intensity.
+Types: Junction, PIN, Avalanche, Schottky.
+--------------------------------------------------------------------------------
+Junction Photodiode Q. Explain construction and working of a junction photodiode.
+Construction: Reverse-biased p-n junction, active area with anti-reflection coating, depletion region absorbs photons.
+Working: Incident photons create electron-hole pairs → photocurrent + dark current.
+Applications: CCDs, smoke detectors, TVs, remote controls, optical communication.
+--------------------------------------------------------------------------------
+PIN Photodiode Q. Explain the working of a PIN photodiode.
+Structure: p-region, intrinsic region, n-region.
+Intrinsic layer absorbs more photons → higher photocurrent.
+Advantages: Better efficiency, speed, sensitivity.
+Applications: RF/microwave switches, fibre optic networks, X-ray/gamma detection.
+--------------------------------------------------------------------------------
+☀️ Solar Cell Q. Explain the principle of a solar cell.
+Works on photovoltaic effect: converts sunlight → electrical energy.
 Q. Explain construction and working of a solar cell.
-
-- Construction: Thin n-layer, heavily doped p-n junction, anti-reflection coating.
-- Working: Sunlight excites electrons → flow through external circuit → current.
-
----
-
+Construction: Thin n-layer, heavily doped p-n junction, anti-reflection coating.
+Working: Sunlight excites electrons → flow through external circuit → current.
+--------------------------------------------------------------------------------
 I-V Characteristics
-- Voc: Open circuit voltage.
-- Isc: Short circuit current.
-- Pmax: Maximum power at specific load resistance.
-- Operated at Maximum Power Point (MPP).
-
-Efficiency
-\[
-\eta = \frac{P_{max}}{\text{Input optical power}}
-\]
-
-Fill Factor
-\[
-FF = \frac{P{max}}{V{oc} \cdot I_{sc}}
-\]
-- Range: 0.65 – 0.8.
-
----
-
+Voc: Open circuit voltage.
+Isc: Short circuit current.
+Pmax: Maximum power at specific load resistance.
+Operated at Maximum Power Point (MPP).
+Efficiency [ \eta = \frac{P_{max}}{\text{Input optical power}} ]
+Fill Factor [ FF = \frac{P{max}}{V{oc} \cdot I_{sc}} ]
+Range: 0.65 – 0.8.
+--------------------------------------------------------------------------------
 Advantages
-- No fuel, no pollution, low maintenance.
-
+No fuel, no pollution, low maintenance.
 Disadvantages
-- Brittle, large space needed, requires cleaning.
-
+Brittle, large space needed, requires cleaning.
 Applications
-- Satellites, defence equipment, rural electrification, calculators, watches, telecom systems, EV charging.
-
+Satellites, defence equipment, rural electrification, calculators, watches, telecom systems, EV charging.
 Stringing
-- Series: Voltage adds, current same.
-- Parallel: Current adds, voltage same.
-
----
-
-💡 Light Emitting Diode (LED)
-Q. What is LED? Explain working.
-
-- Forward-biased p-n junction emits light via electron-hole recombination.
-- Photon energy ≈ band gap energy.
-- Wavelength:
-\[
-\lambda = \frac{hc}{E_g}
-\]
-
+Series: Voltage adds, current same.
+Parallel: Current adds, voltage same.
+--------------------------------------------------------------------------------
+💡 Light Emitting Diode (LED) Q. What is LED? Explain working.
+Forward-biased p-n junction emits light via electron-hole recombination.
+Photon energy ≈ band gap energy.
+Wavelength:
+λ= 
+E 
+g
+​
+ 
+hc
+​
+ 
 Examples
-- GaAs (Eg = 1.45 eV) → Infrared.
-- GaAsP (Eg = 3 eV) → Yellow.
-- GaP (Eg = 2.25 eV) → Green.
-
----
-
+GaAs (Eg = 1.45 eV) → Infrared.
+GaAsP (Eg = 3 eV) → Yellow.
+GaP (Eg = 2.25 eV) → Green.
+--------------------------------------------------------------------------------
 Features
-- Point source, moderate input power, fast switching.
-
+Point source, moderate input power, fast switching.
 Applications
-- Fibre optics, household lighting, mobile displays, traffic signals, automotive lights, digital displays.
-
+Fibre optics, household lighting, mobile displays, traffic signals, automotive lights, digital displays.
 Advantages
-- Energy saving, low voltage/current, fast response, long lifespan (>10 years), durable, cost-effective.
-
+Energy saving, low voltage/current, fast response, long lifespan (>10 years), durable, cost-effective.
 Disadvantages
-- Sensitive to excess voltage/current, efficiency drops at high current.
-
----
-
-📐 Solved Problem
-Q. Determine the wavelength of light emitted from LED made of GaP semiconductor (Eg = 2.26 eV).
-
-\[
-\lambda = \frac{hc}{E_g}
-\]
-
-Given:  
-\(h = 6.625 \times 10^{-34} \, Js\),  
-\(c = 3 \times 10^8 \, m/s\),  
-\(E_g = 2.26 \, eV = 2.26 \times 1.6 \times 10^{-19} J\)
-
-\[
-\lambda = \frac{6.625 \times 10^{-34} \cdot 3 \times 10^8}{2.26 \cdot 1.6 \times 10^{-19}}
-\]
-
-\[
-\lambda = 5.496 \times 10^{-7} \, m = 550 \, nm
-\]
-
+Sensitive to excess voltage/current, efficiency drops at high current.
+--------------------------------------------------------------------------------
+📐 Solved Problem Q. Determine the wavelength of light emitted from LED made of GaP semiconductor (Eg = 2.26 eV).
+λ= 
+E 
+g
+​
+ 
+hc
+​
+ 
+Given: (h = 6.625 \times 10^{-34} , Js), (c = 3 \times 10^8 , m/s), (E_g = 2.26 , eV = 2.26 \times 1.6 \times 10^{-19} J)
+λ= 
+2.26⋅1.6×10 
+−19
+ 
+6.625×10 
+−34
+ ⋅3×10 
+8
+ 
+​
+ 
+λ=5.496×10 
+−7
+ m=550nm
 → Green light emission.
-
----
-
+--------------------------------------------------------------------------------
 📝 Quick Revision Cheat Sheet
-
-- Photonics = photons + electronics.  
-- Photodetectors = convert light → electrical signal.  
-- Photodiode types = Junction, PIN, Avalanche, Schottky.  
-- Solar cell principle = Photovoltaic effect.  
-- Efficiency = \(P_{max}/\text{Input power}\).  
-- Fill Factor = \(P{max}/(V{oc} \cdot I_{sc})\).  
-- LED wavelength = \(\lambda = hc/E_g\).  
-- GaP LED → 550 nm (green).  
-
----
-
+Photonics = photons + electronics.
+Photodetectors = convert light → electrical signal.
+Photodiode types = Junction, PIN, Avalanche, Schottky.
+Solar cell principle = Photovoltaic effect.
+Efficiency = (P_{max}/\text{Input power}).
+Fill Factor = (P{max}/(V{oc} \cdot I_{sc})).
+LED wavelength = (\lambda = hc/E_g).
+GaP LED → 550 nm (green).
