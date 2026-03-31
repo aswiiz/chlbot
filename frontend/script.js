@@ -9,9 +9,14 @@ let searchQuery = "";
 
 // Init
 document.addEventListener('DOMContentLoaded', () => {
-    loadSubjects();
+    initApp();
     initSearch();
 });
+
+async function initApp() {
+    await fetchSubjects();
+    populateSubjectDropdown();
+}
 
 // Navigation & View Management
 function showView(viewId) {
@@ -19,43 +24,132 @@ function showView(viewId) {
     const target = document.getElementById(viewId);
     if (target) {
         target.classList.add('active');
+        // If switching to mindmap view, reset to setup if nothing is active
+        if (viewId === 'mindmap-view' && !activeSubject) {
+            resetSetup();
+        }
     }
 }
 
 // Data Fetching
-async function loadSubjects() {
+async function fetchSubjects() {
     try {
         const res = await fetch(`${API_URL}/subjects/`);
         subjects = await res.json();
-
-        // Auto-select PHOTONICS if available
-        activeSubject = subjects.find(s => s.name.toUpperCase() === "PHOTONICS") || subjects[0];
-
-        if (activeSubject) {
-            document.getElementById('current-subject-title').innerText = activeSubject.name;
-            renderTree();
-        }
     } catch (err) {
         console.error('Error loading subjects:', err);
     }
 }
 
+function populateSubjectDropdown() {
+    const select = document.getElementById('subject-select');
+    if (!select) return;
+
+    select.innerHTML = '<option value="" disabled selected>Select Subject</option>';
+    subjects.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.name;
+        opt.innerText = s.name;
+        select.appendChild(opt);
+    });
+}
+
+function updateTopicDropdown() {
+    const subjectName = document.getElementById('subject-select').value;
+    const topicSelect = document.getElementById('topic-select');
+    const selectedSub = subjects.find(s => s.name === subjectName);
+
+    if (!selectedSub) return;
+
+    topicSelect.innerHTML = '<option value="" disabled selected>Select Topic</option>';
+    selectedSub.topics.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.title;
+        opt.innerText = t.title;
+        topicSelect.appendChild(opt);
+    });
+}
+
+// Step 3: Simulation
+async function generateMindMapAction() {
+    const subName = document.getElementById('subject-select').value;
+    const topicName = document.getElementById('topic-select').value;
+
+    if (!subName || !topicName) {
+        alert("Please select both a subject and a topic.");
+        return;
+    }
+
+    // UI Transition
+    document.getElementById('mindmap-setup').classList.add('hidden');
+    document.getElementById('mindmap-loading').classList.remove('hidden');
+
+    const loaderMsg = document.getElementById('loading-messages');
+    const messages = [
+        "Analyzing topic context...",
+        "Identifying core concepts...",
+        "Structuring knowledge hierarchy...",
+        "Optimizing visual layout...",
+        "Calculating confidence metrics...",
+        "Finalizing knowledge graph..."
+    ];
+
+    // Simulate AI Generation
+    for (let i = 0; i < messages.length; i++) {
+        loaderMsg.innerText = messages[i];
+        await new Promise(r => setTimeout(r, 600));
+    }
+
+    // Set Active State
+    activeSubject = subjects.find(s => s.name === subName);
+    const rootTopic = activeSubject.topics.find(t => t.title === topicName);
+
+    // Mock "Topic-as-Subject" for the tree renderer
+    // We treat the selected topic as the root of the tree
+    displayGeneratedMap(subName, rootTopic);
+}
+
+function displayGeneratedMap(subjectName, rootTopic) {
+    document.getElementById('mindmap-loading').classList.add('hidden');
+    document.getElementById('mindmap-content').classList.remove('hidden');
+
+    document.getElementById('current-subject-title').innerText = rootTopic.title;
+
+    // Setup tree
+    const treeRoot = document.getElementById('tree-root');
+    treeRoot.innerHTML = '';
+
+    // In our seed, photons/etc are children of the topic
+    // We wrap the single root topic for the renderer
+    expandedNodes.clear();
+    expandedNodes.add('gen-root');
+
+    treeRoot.appendChild(createTreeNode(rootTopic, 0, 'gen-root'));
+
+    const count = countAllNodes([rootTopic]);
+    document.getElementById('topic-count-stats').innerText = `${count} Concepts Found`;
+
+    // Reset notes
+    document.getElementById('notes-empty-state').classList.remove('hidden');
+    document.getElementById('active-note-view').classList.add('hidden');
+}
+
+function resetSetup() {
+    document.getElementById('mindmap-setup').classList.remove('hidden');
+    document.getElementById('mindmap-loading').classList.add('hidden');
+    document.getElementById('mindmap-content').classList.add('hidden');
+
+    // Reset dropdowns if needed
+    document.getElementById('subject-select').value = "";
+    document.getElementById('topic-select').innerHTML = '<option value="" disabled selected>Select subject first</option>';
+}
+
 // Tree Rendering
 function renderTree() {
     const treeRoot = document.getElementById('tree-root');
-    if (!activeSubject || !activeSubject.topics) return;
-
-    treeRoot.innerHTML = '';
-
-    // Sort topics if needed or filter by search
-    const filteredTopics = filterTopics(activeSubject.topics, searchQuery);
-
-    filteredTopics.forEach((topic, index) => {
-        treeRoot.appendChild(createTreeNode(topic, 0, `root-${index}`));
-    });
-
-    const totalVisible = countAllNodes(filteredTopics);
-    document.getElementById('topic-count-stats').innerText = `${totalVisible} Topics Found`;
+    // For the generated map, activeSubject is set but we use the selected topic as root
+    // This is handled in displayGeneratedMap.
+    // Searching/filtering will refresh the current root.
 }
 
 function countAllNodes(nodes) {
@@ -74,8 +168,7 @@ function createTreeNode(topic, depth, id) {
     container.className = 'tree-node flex flex-col';
 
     const hasChildren = topic.children && topic.children.length > 0;
-    const isExpanded = expandedNodes.has(id) || (searchQuery.length > 0 && hasChildren);
-    const isMatched = searchQuery.length > 0 && topic.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const isExpanded = expandedNodes.has(id) || (searchQuery && hasChildren);
 
     // Confidence Color
     let statusClass = "status-green";
@@ -83,7 +176,7 @@ function createTreeNode(topic, depth, id) {
     else if (topic.confidence <= 3) statusClass = "status-yellow";
 
     const nodeContent = document.createElement('div');
-    nodeContent.className = `tree-node-content flex items-center gap-2 py-2 px-3 rounded-lg cursor-pointer transition-all duration-200 group ${depth > 0 ? 'ml-' + (depth * 4) : ''} ${isMatched ? 'search-highlight' : ''}`;
+    nodeContent.className = `tree-node-content flex items-center gap-2 py-2 px-3 rounded-lg cursor-pointer transition-all duration-200 group`;
     nodeContent.style.marginLeft = `${depth * 1.5}rem`;
 
     const arrowIcon = hasChildren
@@ -95,19 +188,18 @@ function createTreeNode(topic, depth, id) {
             <span class="w-4 flex justify-center">${arrowIcon}</span>
             <span class="${statusClass} status-dot"></span>
             <span class="text-sm font-medium ${hasChildren ? 'text-slate-200' : 'text-slate-400'} group-hover:text-white transition-colors">
-                ${highlightText(topic.title, searchQuery)}
+                ${topic.title}
             </span>
         </div>
-        ${!hasChildren ? '<i class="fas fa-file-alt text-[10px] text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity"></i>' : ''}
     `;
 
     nodeContent.onclick = (e) => {
         e.stopPropagation();
         if (hasChildren && e.target.closest('.fa-caret-right')) {
-            toggleNode(id);
+            toggleNode(id, topic);
         } else {
             selectTopic(topic);
-            if (hasChildren && !isExpanded) toggleNode(id);
+            if (hasChildren && !isExpanded) toggleNode(id, topic);
         }
     };
 
@@ -125,78 +217,23 @@ function createTreeNode(topic, depth, id) {
     return container;
 }
 
-// Search Logic
-function initSearch() {
-    const searchInput = document.getElementById('global-search');
-    searchInput.addEventListener('input', (e) => {
-        searchQuery = e.target.value.trim();
-        renderTree();
-    });
-}
-
-function filterTopics(topics, query) {
-    if (!query) return topics;
-
-    return topics.filter(topic => {
-        const matchesTopic = topic.title.toLowerCase().includes(query.toLowerCase());
-        const hasMatchingChild = topic.children && filterTopics(topic.children, query).length > 0;
-        return matchesTopic || hasMatchingChild;
-    });
-}
-
-function highlightText(text, query) {
-    if (!query) return text;
-    const regex = new RegExp(`(${query})`, 'gi');
-    return text.replace(regex, '<span class="text-blue-400 font-bold">$1</span>');
-}
-
-// State Management
-function toggleNode(id) {
+function toggleNode(id, topic) {
     if (expandedNodes.has(id)) {
         expandedNodes.delete(id);
     } else {
         expandedNodes.add(id);
     }
-    renderTree();
-}
-
-function expandAll() {
-    if (!activeSubject || !activeSubject.topics) return;
-
-    function recurse(nodes, parentId) {
-        nodes.forEach((node, idx) => {
-            const id = parentId ? `${parentId}-${idx}` : `root-${idx}`;
-            if (node.children && node.children.length > 0) {
-                expandedNodes.add(id);
-                recurse(node.children, id);
-            }
-        });
-    }
-
-    expandedNodes.clear();
-    recurse(activeSubject.topics);
-    renderTree();
-}
-
-function collapseAll() {
-    expandedNodes.clear();
-    searchQuery = "";
-    const searchInput = document.getElementById('global-search');
-    if (searchInput) searchInput.value = "";
-    renderTree();
+    // Simple re-render of the specific root
+    displayGeneratedMap(activeSubject.name, activeSubject.topics.find(t => t.title === document.getElementById('current-subject-title').innerText));
 }
 
 function selectTopic(topic) {
     activeTopicNode = topic;
 
-    // Hide empty state
     document.getElementById('notes-empty-state').classList.add('hidden');
-
-    // Show active note view
     const view = document.getElementById('active-note-view');
     view.classList.remove('hidden');
 
-    // Update Title & Badge
     document.getElementById('note-title').innerText = topic.title;
 
     const badge = document.getElementById('note-status-badge');
@@ -214,19 +251,13 @@ function selectTopic(topic) {
     badge.innerText = statusText;
     badge.className = `px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${badgeClass}`;
 
-    // Update Description (Notes)
     const notesContainer = document.getElementById('note-sections-container');
     notesContainer.innerHTML = '';
 
     if (topic.note) {
-        // Parse note into sections if it follows the Example structure
-        // Structure: p-region, intrinsic region... Working: Intrinsic layer...
         const lines = topic.note.split('\n');
+        document.getElementById('note-description').innerText = lines[0];
 
-        // Show the first line as a description summary if multiple lines exist
-        document.getElementById('note-description').innerText = lines[0] || "No detailed AI description available for this node yet.";
-
-        // If there are specific structured lines (like "Structure:", "Working:"), parse them
         if (lines.length > 1) {
             lines.slice(1).forEach(line => {
                 if (line.includes(':')) {
@@ -234,29 +265,12 @@ function selectTopic(topic) {
                     notesContainer.appendChild(createNoteSection(head, rest.join(':')));
                 }
             });
-        } else if (topic.note.includes('Structure:') || topic.note.includes('Working:') || topic.note.includes('Advantages:')) {
-            // Fallback for single line with keys
-            const keys = ['Structure:', 'Working:', 'Advantages:', 'Applications:', 'Pros and Cons:'];
-            let currentText = topic.note;
-            keys.forEach((key, idx) => {
-                if (currentText.includes(key)) {
-                    let sectionContent = "";
-                    const nextKey = keys.find((k, i) => i > idx && currentText.includes(k));
-                    if (nextKey) {
-                        sectionContent = currentText.split(key)[1].split(nextKey)[0];
-                    } else {
-                        sectionContent = currentText.split(key)[1];
-                    }
-                    notesContainer.appendChild(createNoteSection(key.replace(':', ''), sectionContent.trim()));
-                }
-            });
         }
     } else {
-        document.getElementById('note-description').innerText = "Select a specific sub-topic or final node to view detailed clinical and research notes.";
+        document.getElementById('note-description').innerText = "Detailed content is under development for this node.";
     }
 
-    // Update Metrics
-    document.getElementById('note-confidence-val').innerText = (topic.confidence * 0.96).toFixed(1); // Mock variation
+    document.getElementById('note-confidence-val').innerText = (topic.confidence * 0.96).toFixed(1);
     document.getElementById('note-confidence-bar').style.width = `${topic.confidence * 20}%`;
 }
 
@@ -270,17 +284,43 @@ function createNoteSection(title, content) {
     return div;
 }
 
-function countVisibleNodes(topics) {
-    return countAllNodes(topics);
+// Search Logic
+function initSearch() {
+    const searchInput = document.getElementById('global-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            searchQuery = e.target.value.trim();
+            // Just for demo, we only search in current view
+        });
+    }
 }
 
-// UI Modals
+// Expand/Collapse All
+function expandAll() {
+    const currentRootTitle = document.getElementById('current-subject-title').innerText;
+    const rootTopic = activeSubject.topics.find(t => t.title === currentRootTitle);
+
+    function recurse(nodes, parentId) {
+        nodes.forEach((node, idx) => {
+            const id = `${parentId}-${idx}`;
+            if (node.children && node.children.length > 0) {
+                expandedNodes.add(id);
+                recurse(node.children, id);
+            }
+        });
+    }
+    recurse(rootTopic.children || [], 'gen-root');
+    displayGeneratedMap(activeSubject.name, rootTopic);
+}
+
+function collapseAll() {
+    expandedNodes.clear();
+    expandedNodes.add('gen-root');
+    const currentRootTitle = document.getElementById('current-subject-title').innerText;
+    const rootTopic = activeSubject.topics.find(t => t.title === currentRootTitle);
+    displayGeneratedMap(activeSubject.name, rootTopic);
+}
+
 function closeModal() {
     document.getElementById('modal-overlay').classList.add('hidden');
-}
-
-function showModal(title, msg) {
-    document.getElementById('modal-title').innerText = title;
-    document.getElementById('modal-message').innerText = msg;
-    document.getElementById('modal-overlay').classList.remove('hidden');
 }
