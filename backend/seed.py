@@ -211,17 +211,32 @@ subjects_data = [
                 ],
                 "flashcards": [
                     {
-                        "title": "Basics & Advantages",
+                        "title": "Introduction & Basics",
                         "cards": [
                             {"question": "Define Photonics.", "answer": "The science of light (photon) generation, detection, and manipulation."},
-                            {"question": "List two advantages of Photonics.", "answer": "High speed signal propagation and immunity to electromagnetic interference."}
+                            {"question": "How does Photonics relate to Electronics?", "answer": "Photonics uses photons (light) while electronics uses electrons to carry information."},
+                            {"question": "What fields does Photonics combine?", "answer": "Optics, Quantum Mechanics, and Electromagnetism."}
+                        ]
+                    },
+                    {
+                        "title": "Advantages",
+                        "cards": [
+                            {"question": "Why use Photonics for communication?", "answer": "It offers significantly higher bandwidth and lower power consumption than traditional electronics."},
+                            {"question": "Is Photonics more secure?", "answer": "Yes, it provides increased security and higher reliability in data transmission."}
                         ]
                     },
                     {
                         "title": "Photodetectors",
                         "cards": [
-                            {"question": "What is a PIN Photodiode?", "answer": "A photodiode with an intrinsic (I) layer between P and N regions to increase depletion width."},
-                            {"question": "Define Responsivity.", "answer": "The ratio of generated photocurrent to incident optical power."}
+                            {"question": "Name the four common types of Photodetectors.", "answer": "Junction, PIN, Avalanche, and Schottky Photodiodes."},
+                            {"question": "What is the primary requirement for a photodetector?", "answer": "High sensitivity and short response time."}
+                        ]
+                    },
+                    {
+                        "title": "Solar Cells & LEDs",
+                        "cards": [
+                            {"question": "What is the Photovoltaic Effect?", "answer": "The generation of voltage and electric current in a material upon exposure to light."},
+                            {"question": "What determines LED colors?", "answer": "The materials used in the semiconductor dictate the wavelength/color of light emitted."}
                         ]
                     }
                 ]
