@@ -10,6 +10,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             font-family: 'Outfit', sans-serif;
@@ -48,7 +49,6 @@
             display: block;
         }
 
-        /* Custom animations for tree */
         .tree-node-content:hover {
             background: rgba(255, 255, 255, 0.05);
         }
@@ -79,6 +79,48 @@
         .search-highlight {
             background: rgba(56, 189, 248, 0.3);
             border-radius: 2px;
+        }
+
+        /* AI Simulation Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes zoomIn {
+            from {
+                transform: scale(0.95);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .animate-fadeIn {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        .animate-zoomIn {
+            animation: zoomIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .setup-card {
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        select option {
+            background: #0f172a;
+            color: white;
         }
     </style>
 </head>
@@ -152,7 +194,7 @@
             </header>
 
             <!-- Mind Map View container -->
-            <section id="mindmap-view" class="view active flex flex-col h-[calc(100vh-64px)]">
+            <section id="mindmap-view" class="view active flex flex-col h-[calc(100vh-64px)] overflow-hidden">
                 <!-- Step 1 & 2: Selection Screen -->
                 <div id="mindmap-setup"
                     class="flex-1 flex flex-col items-center justify-center p-8 bg-gradient-to-b from-[#020617] to-[#0f172a]">
@@ -224,9 +266,8 @@
                     </div>
                 </div>
 
-                <!-- Step 4: Final Mind Map View (Hidden by default) -->
+                <!-- Step 4: Final Mind Map View -->
                 <div id="mindmap-content" class="hidden flex flex-col h-full overflow-hidden">
-                    <!-- Topic Header -->
                     <div class="px-8 py-6 flex items-center justify-between bg-white/[0.02] border-b border-white/5">
                         <div class="flex items-center gap-4">
                             <button onclick="resetSetup()"
@@ -244,7 +285,6 @@
                                 </p>
                             </div>
                         </div>
-
                         <div class="flex items-center gap-3">
                             <button onclick="expandAll()"
                                 class="px-4 py-2 text-xs font-medium text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-all">Expand
@@ -260,23 +300,17 @@
                         </div>
                     </div>
 
-                    <!-- Main Layout -->
                     <div class="flex-1 flex overflow-hidden">
-                        <!-- Left: Tree Panel -->
                         <div class="w-1/2 h-full flex flex-col border-r border-white/5 p-6 overflow-hidden">
                             <div class="flex items-center justify-between mb-4">
                                 <span class="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Concept
                                     Structure</span>
                                 <span class="text-[10px] text-slate-400" id="topic-count-stats">0 Topics Found</span>
                             </div>
-                            <div class="mindmap-tree flex-1 overflow-y-auto pr-4" id="tree-root">
-                                <!-- Tree will be injected here -->
-                            </div>
+                            <div class="mindmap-tree flex-1 overflow-y-auto pr-4" id="tree-root"></div>
                         </div>
 
-                        <!-- Right: Notes Panel -->
                         <div class="w-1/2 h-full flex flex-col bg-[#030816]/50 relative" id="notes-panel">
-                            <!-- Empty State -->
                             <div id="notes-empty-state"
                                 class="absolute inset-0 flex flex-col items-center justify-center p-12 text-center">
                                 <div class="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-6">
@@ -289,7 +323,6 @@
                                 </p>
                             </div>
 
-                            <!-- Active Note View -->
                             <div id="active-note-view" class="hidden h-full flex flex-col">
                                 <div class="p-8 border-b border-white/5 glass">
                                     <div class="flex items-start justify-between">
@@ -305,19 +338,9 @@
                                                 class="text-3xl font-extrabold text-white leading-tight">PIN Photodiode
                                             </h2>
                                         </div>
-                                        <div class="flex gap-2">
-                                            <button
-                                                class="p-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 transition-all"><i
-                                                    class="fas fa-edit text-sm"></i></button>
-                                            <button
-                                                class="p-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 transition-all"><i
-                                                    class="fas fa-share-alt text-sm"></i></button>
-                                        </div>
                                     </div>
                                 </div>
-
                                 <div class="flex-1 overflow-y-auto p-8 space-y-8 scroll-smooth">
-                                    <!-- AI Content -->
                                     <div class="prose prose-invert max-w-none">
                                         <div class="bg-blue-600/5 border border-blue-500/20 rounded-2xl p-6 mb-8">
                                             <div class="flex items-center gap-3 mb-4 text-blue-400">
@@ -326,25 +349,17 @@
                                                     Definition</span>
                                             </div>
                                             <p id="note-description"
-                                                class="text-lg text-slate-300 leading-relaxed font-light italic">
-                                                The PIN photodiode is specialized semiconductor device with an intrinsic
-                                                layer...
-                                            </p>
+                                                class="text-lg text-slate-300 leading-relaxed font-light italic"></p>
                                         </div>
-
-                                        <div id="note-sections-container" class="space-y-6">
-                                            <!-- Dynamic sections will be added here -->
-                                        </div>
+                                        <div id="note-sections-container" class="space-y-6"></div>
                                     </div>
-
-                                    <!-- Metrics -->
                                     <div class="grid grid-cols-2 gap-4 mt-8">
                                         <div class="glass rounded-2xl p-4 border border-white/5">
                                             <p class="text-[10px] text-slate-500 uppercase font-bold mb-1">Confidence
                                                 Score</p>
                                             <div class="flex items-end gap-2">
                                                 <span id="note-confidence-val"
-                                                    class="text-2xl font-bold text-white">4.8</span>
+                                                    class="text-2xl font-bold text-white"></span>
                                                 <span class="text-xs text-slate-500 mb-1">/ 5.0</span>
                                             </div>
                                             <div class="w-full bg-white/5 h-1.5 rounded-full mt-3 overflow-hidden">
@@ -353,29 +368,6 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="glass rounded-2xl p-4 border border-white/5">
-                                            <p class="text-[10px] text-slate-500 uppercase font-bold mb-1">Retention
-                                                Strength</p>
-                                            <div class="flex items-end gap-2 text-green-400">
-                                                <span class="text-2xl font-bold">92%</span>
-                                                <i class="fas fa-trending-up text-xs mb-1.5"></i>
-                                            </div>
-                                            <p class="text-[10px] text-slate-500 mt-3 font-medium">Decay predicted in 12
-                                                days</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Bottom Bar -->
-                                <div class="p-6 bg-[#030816] border-t border-white/5 flex items-center justify-between">
-                                    <span class="text-[10px] text-slate-500">Last reviewed 2 hours ago</span>
-                                    <div class="flex gap-3">
-                                        <button
-                                            class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold rounded-lg transition-all">Review
-                                            Later</button>
-                                        <button
-                                            class="px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-xs font-semibold rounded-lg transition-all shadow-lg shadow-green-600/20">Mark
-                                            as Mastered</button>
                                     </div>
                                 </div>
                             </div>
@@ -384,11 +376,139 @@
                 </div>
             </section>
 
-            <!-- Other views placeholders -->
-            <section id="dashboard-view" class="view p-12 text-center opacity-50">
-                <i class="fas fa-th-large text-6xl mb-4"></i>
-                <h2 class="text-2xl">Dashboard View</h2>
-                <p>Returning in the next update.</p>
+            <!-- Dashboard View -->
+            <section id="dashboard-view" class="view p-12 overflow-y-auto h-[calc(100vh-64px)] scroll-smooth">
+                <div class="max-w-6xl mx-auto space-y-10">
+                    <div class="flex items-end justify-between border-b border-white/5 pb-8">
+                        <div>
+                            <h2 class="text-4xl font-extrabold tracking-tight text-white mb-2">Knowledge Analytics</h2>
+                            <p class="text-slate-400 font-light italic">Real-time cognitive retention tracking & study
+                                optimization.</p>
+                        </div>
+                        <div class="flex gap-4">
+                            <div class="px-5 py-3 glass rounded-2xl flex items-center gap-3">
+                                <i class="fas fa-calendar-alt text-blue-400"></i>
+                                <span class="text-sm font-semibold tracking-wide">March 31, 2026</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stat Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div
+                            class="stat-card glass p-8 rounded-[2rem] border-blue-500/10 hover:bg-white/[0.04] transition-all group">
+                            <div class="flex justify-between items-start mb-6">
+                                <div
+                                    class="w-12 h-12 bg-blue-600/20 rounded-2xl flex items-center justify-center text-blue-400 transition-colors group-hover:bg-blue-600 group-hover:text-white">
+                                    <i class="fas fa-brain text-xl"></i>
+                                </div>
+                                <span
+                                    class="px-3 py-1 bg-green-500/20 text-green-400 text-[10px] font-bold uppercase rounded-full">Active</span>
+                            </div>
+                            <h3 class="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Retention Index
+                            </h3>
+                            <div class="flex items-baseline gap-2">
+                                <span class="text-4xl font-extrabold text-white">82%</span>
+                                <span class="text-green-400 text-xs font-semibold">+4.2%</span>
+                            </div>
+                        </div>
+
+                        <div
+                            class="stat-card glass p-8 rounded-[2rem] border-orange-500/10 hover:bg-white/[0.04] transition-all group">
+                            <div class="flex justify-between items-start mb-6">
+                                <div
+                                    class="w-12 h-12 bg-orange-600/20 rounded-2xl flex items-center justify-center text-orange-400 transition-colors group-hover:bg-orange-600 group-hover:text-white">
+                                    <i class="fas fa-hourglass-half text-xl"></i>
+                                </div>
+                                <span
+                                    class="px-3 py-1 bg-red-500/20 text-red-400 text-[10px] font-bold uppercase rounded-full">Attention
+                                    Needed</span>
+                            </div>
+                            <h3 class="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Knowledge Decay
+                            </h3>
+                            <div class="flex items-baseline gap-2">
+                                <span class="text-4xl font-extrabold text-white">12</span>
+                                <span class="text-slate-500 text-xs font-medium uppercase tracking-tighter">Nodes</span>
+                            </div>
+                        </div>
+
+                        <div
+                            class="stat-card glass p-8 rounded-[2rem] border-purple-500/10 hover:bg-white/[0.04] transition-all group">
+                            <div class="flex justify-between items-start mb-6">
+                                <div
+                                    class="w-12 h-12 bg-purple-600/20 rounded-2xl flex items-center justify-center text-purple-400 transition-colors group-hover:bg-purple-600 group-hover:text-white">
+                                    <i class="fas fa-rocket text-xl"></i>
+                                </div>
+                                <span
+                                    class="px-3 py-1 bg-blue-500/20 text-blue-400 text-[10px] font-bold uppercase rounded-full">Top
+                                    Tier</span>
+                            </div>
+                            <h3 class="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Subject Mastered
+                            </h3>
+                            <div class="flex items-baseline gap-2">
+                                <span class="text-4xl font-extrabold text-white">4</span>
+                                <span class="text-slate-500 text-xs font-medium uppercase tracking-tighter">Full
+                                    Hubs</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Main Dashboard Content -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <!-- Left: Retention Graph -->
+                        <div class="glass p-8 rounded-[2.5rem] border border-white/5 space-y-6">
+                            <div class="flex items-center justify-between">
+                                <h4 class="text-lg font-bold text-white">Cognitive Trend <span
+                                        class="text-xs font-light text-slate-500 ml-2">7-Day Projection</span></h4>
+                                <div class="flex gap-2">
+                                    <button
+                                        class="px-3 py-1.5 bg-white/5 rounded-lg text-[10px] font-bold uppercase tracking-widest text-[#94a3b8]">Review
+                                        Log</button>
+                                </div>
+                            </div>
+                            <div class="h-64 flex items-center justify-center relative">
+                                <canvas id="retentionChart" class="w-full h-full"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Right: Focus Areas -->
+                        <div class="glass p-8 rounded-[2.5rem] border border-white/5 space-y-6">
+                            <h4 class="text-lg font-bold text-white">Focus Priority <span
+                                    class="text-xs font-light text-slate-500 ml-2">Algorithm-assigned</span></h4>
+                            <div class="space-y-4" id="priority-list">
+                                <!-- Simulated Priorities -->
+                                <div
+                                    class="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-2 h-2 rounded-full bg-red-500"></div>
+                                        <span class="text-sm font-medium">Quantum Tunnelling</span>
+                                    </div>
+                                    <span class="text-xs text-red-400 font-bold">24% Retention</span>
+                                </div>
+                                <div
+                                    class="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-2 h-2 rounded-full bg-red-500"></div>
+                                        <span class="text-sm font-medium">Bose-Einstein Condensate</span>
+                                    </div>
+                                    <span
+                                        class="text-xs text-red-500 font-extrabold uppercase animate-pulse">Critical</span>
+                                </div>
+                                <div
+                                    class="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
+                                        <span class="text-sm font-medium">Semiconductor Physics</span>
+                                    </div>
+                                    <span class="text-xs text-yellow-400 font-bold">56% Decay</span>
+                                </div>
+                            </div>
+                            <button onclick="showView('mindmap-view')"
+                                class="w-full py-4 bg-slate-800 hover:bg-slate-700 text-white text-sm font-bold rounded-2xl transition-all border border-white/5">Start
+                                Focused Revision Session</button>
+                        </div>
+                    </div>
+                </div>
             </section>
             <section id="chat-view" class="view p-12 text-center opacity-50">
                 <i class="fas fa-robot text-6xl mb-4"></i>
@@ -398,7 +518,7 @@
         </main>
     </div>
 
-    <!-- Modals (Simplified) -->
+    <!-- Modals -->
     <div id="modal-overlay"
         class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
         <div

@@ -11,6 +11,8 @@ let searchQuery = "";
 document.addEventListener('DOMContentLoaded', () => {
     initApp();
     initSearch();
+    initDashboard();
+    showView('dashboard-view');
 });
 
 async function initApp() {
@@ -18,17 +20,75 @@ async function initApp() {
     populateSubjectDropdown();
 }
 
-// Navigation & View Management
+// View Logic Fix
 function showView(viewId) {
+    document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+
+    // Fix for style tags in Sidebar
+    document.querySelectorAll('nav a').forEach(a => {
+        a.classList.remove('bg-blue-600/20', 'text-blue-400', 'border-blue-500/30');
+        a.classList.add('hover:bg-white/5', 'text-slate-400');
+    });
+
     const target = document.getElementById(viewId);
     if (target) {
+        target.classList.remove('hidden');
         target.classList.add('active');
-        // If switching to mindmap view, reset to setup if nothing is active
+
+        // Update Sidebar Active State
+        const sidebarLink = document.querySelector(`a[onclick="showView('${viewId}')"]`);
+        if (sidebarLink) {
+            sidebarLink.classList.add('bg-blue-600/20', 'text-blue-400', 'border-blue-500/30');
+            sidebarLink.classList.remove('hover:bg-white/5', 'text-slate-400');
+        }
+
         if (viewId === 'mindmap-view' && !activeSubject) {
             resetSetup();
         }
+        if (viewId === 'dashboard-view') {
+            initDashboard();
+        }
     }
+}
+
+// Stats & Charts
+function initDashboard() {
+    const ctx = document.getElementById('retentionChart');
+    if (!ctx) return;
+
+    // Destroy existing chart if any
+    if (window.myRetentionChart) window.myRetentionChart.destroy();
+
+    window.myRetentionChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            datasets: [{
+                label: 'Memory Retention',
+                data: [65, 78, 72, 85, 82, 88, 92],
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                fill: true,
+                tension: 0.4,
+                borderWidth: 3,
+                pointRadius: 4,
+                pointBackgroundColor: '#3b82f6'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { display: false, min: 0, max: 100 },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: '#64748b', font: { size: 10, weight: 'bold' } }
+                }
+            }
+        }
+    });
 }
 
 // Data Fetching

@@ -45,10 +45,14 @@ async def serve_frontend():
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 SAMBANOVA_API_KEY = os.getenv("SAMBANOVA_API_KEY")
 
-openai.api_key = OPENAI_API_KEY
+# Global OpenAI Client
+client_openai = None
+if OPENAI_API_KEY:
+    import openai
+    client_openai = openai.OpenAI(api_key=OPENAI_API_KEY)
 
 # Models
-from models import Topic, Subject, ChatRequest, MindMapResponse, Flashcard, FlashcardsResponse
+from .models import Topic, Subject, ChatRequest, MindMapResponse, Flashcard, FlashcardsResponse
 
 # Helper Functions
 def calculate_decay_and_score(last_reviewed: datetime, current_confidence: int):
@@ -156,7 +160,9 @@ async def generate_mindmap(topic: str, subject: str = ""):
             mermaid_code = response.choices[0].message.content.strip()
         else:
             # Fallback to OpenAI
-            response = openai.ChatCompletion.create(
+            if not client_openai:
+                raise HTTPException(status_code=500, detail="OpenAI API Key not configured")
+            response = client_openai.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": sys_prompt},
@@ -181,7 +187,9 @@ async def generate_flashcards(topic: str):
     prompt = f"Topic: {topic}"
     
     try:
-        response = openai.ChatCompletion.create(
+        if not client_openai:
+            raise HTTPException(status_code=500, detail="OpenAI API Key not configured")
+        response = client_openai.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "system", "content": sys_prompt}, {"role": "user", "content": prompt}]
         )
@@ -194,7 +202,9 @@ async def generate_flashcards(topic: str):
 @app.post("/api/ai/chat")
 async def ai_chat(req: ChatRequest):
     try:
-        response = openai.ChatCompletion.create(
+        if not client_openai:
+            return {"reply": "Sorry, AI Assistant is currently offline (API Key missing)."}
+        response = client_openai.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": f"You are CLH AI Assistant. Help the student with topic explanation, revision strategies, and generating study resources. Current Subject: {req.subject}. Current Topic: {req.topic}."},
