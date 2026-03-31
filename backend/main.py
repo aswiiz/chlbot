@@ -144,11 +144,13 @@ async def register(user: User):
         if existing:
             raise HTTPException(status_code=400, detail="User already registered")
         
-        hashed_password = pwd_context.hash(user.password)
+        # Bcrypt has a 72-byte limit. 4 words should be fine, but we'll safeguard.
+        safe_password = user.password.encode('utf-8')[:72].decode('utf-8', 'ignore')
+        hashed_password = pwd_context.hash(safe_password)
         await users_collection.insert_one({"email": user.email, "password": hashed_password})
         return UserResponse(email=user.email, status="success")
     except Exception as e:
-        print(f"Register Error: {e}")
+        print(f"Register Error: {e}", flush=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/auth/login", response_model=UserResponse)
@@ -158,12 +160,13 @@ async def login(user: User):
         if not db_user:
             raise HTTPException(status_code=401, detail="Invalid email or password")
         
-        if not pwd_context.verify(user.password, db_user["password"]):
+        safe_password = user.password.encode('utf-8')[:72].decode('utf-8', 'ignore')
+        if not pwd_context.verify(safe_password, db_user["password"]):
             raise HTTPException(status_code=401, detail="Invalid email or password")
             
         return UserResponse(email=user.email, status="logged_in")
     except Exception as e:
-        print(f"Login Error: {e}")
+        print(f"Login Error: {e}", flush=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/subjects/")
