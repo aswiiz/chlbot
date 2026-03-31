@@ -48,7 +48,7 @@ SAMBANOVA_API_KEY = os.getenv("SAMBANOVA_API_KEY")
 openai.api_key = OPENAI_API_KEY
 
 # Models
-from backend.models import Topic, Subject, ChatRequest, MindMapResponse, Flashcard, FlashcardsResponse
+from models import Topic, Subject, ChatRequest, MindMapResponse, Flashcard, FlashcardsResponse
 
 # Helper Functions
 def calculate_decay_and_score(last_reviewed: datetime, current_confidence: int):
