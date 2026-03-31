@@ -22,13 +22,13 @@ function checkAuth() {
     const app = document.getElementById('app-container');
 
     if (currentUser) {
-        overlay.classList.add('hidden');
-        app.classList.remove('blur-xl', 'pointer-events-none');
+        if (overlay) overlay.classList.add('hidden');
+        if (app) app.classList.remove('blur-xl', 'pointer-events-none');
         initApp();
         showView('dashboard-view');
         initDashboard();
     } else {
-        overlay.classList.remove('hidden');
+        if (overlay) overlay.classList.remove('hidden');
     }
 }
 

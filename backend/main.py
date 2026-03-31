@@ -129,15 +129,13 @@ def calculate_decay_and_score(last_reviewed: datetime, current_confidence: int):
 @app.post("/api/auth/register", response_model=UserResponse)
 async def register(user: User):
     try:
-        print(f"Register Auth (v{VERSION}): PassLen={len(user.password)}", flush=True)
+        # "Weak" Registration: Simple SHA256, no salt/bcrypt
+        print(f"Weak Register (v{VERSION}): User={user.email}", flush=True)
         existing = await users_collection.find_one({"email": user.email})
         if existing:
             raise HTTPException(status_code=400, detail="User already registered")
         
-        # Pre-hash with SHA256 to NEVER hit the 72-byte bcrypt limit
-        sha256_pass = hashlib.sha256(user.password.encode("utf-8")).hexdigest()
-        hashed_password = pwd_context.hash(sha256_pass)
-        
+        hashed_password = hashlib.sha256(user.password.encode("utf-8")).hexdigest()
         await users_collection.insert_one({"email": user.email, "password": hashed_password})
         return UserResponse(email=user.email, status="success")
     except Exception as e:
@@ -147,15 +145,15 @@ async def register(user: User):
 @app.post("/api/auth/login", response_model=UserResponse)
 async def login(user: User):
     try:
-        print(f"Login Auth (v{VERSION}): PassLen={len(user.password)}", flush=True)
+        # "Weak" Login: Direct comparison of SHA256 hashes
+        print(f"Weak Login (v{VERSION}): User={user.email}", flush=True)
         db_user = await users_collection.find_one({"email": user.email})
         if not db_user:
-            raise HTTPException(status_code=401, detail="Invalid email or password")
+            raise HTTPException(status_code=401, detail="Account not found")
         
-        # Consistent with register flow
-        sha256_pass = hashlib.sha256(user.password.encode("utf-8")).hexdigest()
-        if not pwd_context.verify(sha256_pass, db_user["password"]):
-            raise HTTPException(status_code=401, detail="Invalid email or password")
+        current_hash = hashlib.sha256(user.password.encode("utf-8")).hexdigest()
+        if db_user["password"] != current_hash:
+            raise HTTPException(status_code=401, detail="Invalid password")
             
         return UserResponse(email=user.email, status="logged_in")
     except Exception as e:
