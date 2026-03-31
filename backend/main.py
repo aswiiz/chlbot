@@ -45,6 +45,7 @@ MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
 client = AsyncIOMotorClient(MONGODB_URI, serverSelectionTimeoutMS=5000)
 db = client.clh_database
 subjects_collection = db.subjects
+users_collection = db.users
 
 @app.on_event("startup")
 async def startup_event():
