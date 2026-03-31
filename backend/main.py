@@ -42,15 +42,15 @@ app.add_middleware(
 
 # MongoDB Configuration with timeouts for Render health checks
 MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
-print(f"DEBUG: Using MongoDB URI starting with: {MONGODB_URI[:15]}...")
+print(f"DEBUG: Using MongoDB URI starting with: {MONGODB_URI[:15]}...", flush=True)
 if "localhost" in MONGODB_URI:
-    print("WARNING: System is defaulting to 'localhost'. Please set 'MONGODB_URI' on Render!")
+    print("WARNING: System is defaulting to 'localhost'. Please set 'MONGODB_URI' on Render!", flush=True)
 
 client = AsyncIOMotorClient(MONGODB_URI, serverSelectionTimeoutMS=5000)
 db = client.clh_database
 subjects_collection = db.subjects
 users_collection = db.users
-print(f"DEBUG: Collection initialization complete for clh_database.")
+print(f"DEBUG: Collection initialization complete for clh_database.", flush=True)
 
 @app.on_event("startup")
 async def startup_event():
