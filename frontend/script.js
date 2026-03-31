@@ -146,18 +146,16 @@ async function generateMindMapAction() {
 
     const loaderMsg = document.getElementById('loading-messages');
     const messages = [
-        "Analyzing topic context...",
-        "Identifying core concepts...",
-        "Structuring knowledge hierarchy...",
-        "Optimizing visual layout...",
-        "Calculating confidence metrics...",
-        "Finalizing knowledge graph..."
+        "Generating Mind Map...",
+        "Analyzing Topic...",
+        "Extracting Concepts...",
+        "Building Knowledge Graph..."
     ];
 
-    // Simulate AI Generation
+    // Simulate AI Generation (2 seconds total)
     for (let i = 0; i < messages.length; i++) {
         loaderMsg.innerText = messages[i];
-        await new Promise(r => setTimeout(r, 600));
+        await new Promise(r => setTimeout(r, 500));
     }
 
     // Set Active State
@@ -315,19 +313,30 @@ function selectTopic(topic) {
     notesContainer.innerHTML = '';
 
     if (topic.note) {
-        const lines = topic.note.split('\n');
-        document.getElementById('note-description').innerText = lines[0];
+        // If the note has multiple lines, use them as sections
+        // Otherwise, if it's a long paragraph, split by '.' to create bullets
+        let points = [];
+        if (topic.note.includes('\n')) {
+            points = topic.note.split('\n');
+        } else {
+            points = topic.note.split('.').filter(p => p.trim().length > 0).map(p => p.trim());
+        }
 
-        if (lines.length > 1) {
-            lines.slice(1).forEach(line => {
-                if (line.includes(':')) {
-                    const [head, ...rest] = line.split(':');
-                    notesContainer.appendChild(createNoteSection(head, rest.join(':')));
+        document.getElementById('note-description').innerText = points[0] || "";
+
+        if (points.length > 1) {
+            points.slice(1).forEach(p => {
+                let title = "Detail";
+                let content = p;
+                if (p.includes(':')) {
+                    [title, ...rest] = p.split(':');
+                    content = rest.join(':');
                 }
+                notesContainer.appendChild(createNoteSection(title, content));
             });
         }
     } else {
-        document.getElementById('note-description').innerText = "Detailed content is under development for this node.";
+        document.getElementById('note-description').innerText = "Detailed content is under development or being fetched by AI.";
     }
 
     document.getElementById('note-confidence-val').innerText = (topic.confidence * 0.96).toFixed(1);
