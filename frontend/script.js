@@ -25,6 +25,7 @@ function checkAuth() {
         if (overlay) overlay.classList.add('hidden');
         if (app) app.classList.remove('blur-xl', 'pointer-events-none');
         initApp();
+        updateUserProfile();
         showView('dashboard-view');
         initDashboard();
     } else {
@@ -36,6 +37,37 @@ async function initApp() {
     await fetchSubjects();
     populateSubjectDropdown();
     populateFlashSubjectDropdown();
+}
+
+function updateUserProfile() {
+    if (!currentUser) return;
+
+    const nameEl = document.getElementById('user-profile-name');
+    const roleEl = document.getElementById('user-profile-role');
+    const initialsEl = document.getElementById('user-initials-circle');
+
+    if (!nameEl || !roleEl || !initialsEl) return;
+
+    // Format display name from email
+    let displayName = currentUser.email.split('@')[0];
+    displayName = displayName.replace(/[._-]/g, ' ');
+    // Capitalize each word
+    displayName = displayName.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+
+    // Extract initials
+    const words = displayName.split(' ').filter(w => w.length > 0);
+    let initials = "";
+    if (words.length >= 2) {
+        initials = words[0][0] + words[1][0];
+    } else if (words.length === 1) {
+        initials = words[0].slice(0, 2);
+    } else {
+        initials = "??";
+    }
+
+    nameEl.innerText = displayName;
+    roleEl.innerText = currentUser.email;
+    initialsEl.innerText = initials.toUpperCase();
 }
 
 // View Logic Fix
