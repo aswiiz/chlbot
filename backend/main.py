@@ -41,6 +41,9 @@ app.add_middleware(
 )
 
 # MongoDB Configuration with timeouts for Render health checks
+# Diagnostic: Print all available env keys to verify Render injection
+print(f"DEBUG: Environment Keys: {list(os.environ.keys())}", flush=True)
+
 MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
 print(f"DEBUG: Using MongoDB URI starting with: {MONGODB_URI[:15]}...", flush=True)
 if "localhost" in MONGODB_URI:
