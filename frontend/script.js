@@ -152,6 +152,9 @@ async function generateMindMapAction() {
         return;
     }
 
+    // New generation starts: clear state
+    expandedNodes.clear();
+
     // UI Transition
     document.getElementById('mindmap-setup').classList.add('hidden');
     document.getElementById('mindmap-loading').classList.remove('hidden');
@@ -190,11 +193,12 @@ function displayGeneratedMap(subjectName, rootTopic) {
     const treeRoot = document.getElementById('tree-root');
     treeRoot.innerHTML = '';
 
-    expandedNodes.clear();
-    // Default expand the root children
+    // Automatically expand the first level of children for better visibility
     if (rootTopic.children) {
         rootTopic.children.forEach((child, idx) => {
-            treeRoot.appendChild(createTreeNode(child, 0, `gen-root-${idx}`));
+            const id = `gen-root-${idx}`;
+            if (!expandedNodes.has(id)) expandedNodes.add(id); // Expand by default if not already interacted with
+            treeRoot.appendChild(createTreeNode(child, 0, id));
         });
     } else {
         treeRoot.appendChild(createTreeNode(rootTopic, 0, 'gen-root'));
