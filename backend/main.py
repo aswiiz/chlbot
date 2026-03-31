@@ -12,6 +12,7 @@ import json
 from passlib.context import CryptContext
 from .seed import subjects_data
 from dotenv import load_dotenv
+import hashlib
 
 load_dotenv()
 
@@ -55,7 +56,7 @@ subjects_collection = db.subjects
 users_collection = db.users
 print(f"DEBUG: Collection initialization complete for clh_database.", flush=True)
 
-VERSION = "1.0.6-final-auth"
+VERSION = "1.1.0-sha-fix"
 
 @app.on_event("startup")
 async def startup_event():
@@ -133,9 +134,9 @@ async def register(user: User):
         if existing:
             raise HTTPException(status_code=400, detail="User already registered")
         
-        # Bcrypt STRICT 72-byte limit
-        pwd_bytes = user.password.encode("utf-8")[:71]
-        hashed_password = pwd_context.hash(pwd_bytes)
+        # Pre-hash with SHA256 to NEVER hit the 72-byte bcrypt limit
+        sha256_pass = hashlib.sha256(user.password.encode("utf-8")).hexdigest()
+        hashed_password = pwd_context.hash(sha256_pass)
         
         await users_collection.insert_one({"email": user.email, "password": hashed_password})
         return UserResponse(email=user.email, status="success")
@@ -151,8 +152,9 @@ async def login(user: User):
         if not db_user:
             raise HTTPException(status_code=401, detail="Invalid email or password")
         
-        pwd_bytes = user.password.encode("utf-8")[:71]
-        if not pwd_context.verify(pwd_bytes, db_user["password"]):
+        # Consistent with register flow
+        sha256_pass = hashlib.sha256(user.password.encode("utf-8")).hexdigest()
+        if not pwd_context.verify(sha256_pass, db_user["password"]):
             raise HTTPException(status_code=401, detail="Invalid email or password")
             
         return UserResponse(email=user.email, status="logged_in")
