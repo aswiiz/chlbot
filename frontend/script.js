@@ -3,6 +3,7 @@ const API_URL = '/api';
 // State
 let subjects = [];
 let activeSubject = null;
+let activeMindMapRoot = null;
 let activeTopicNode = null;
 let expandedNodes = new Set();
 let searchQuery = "";
@@ -152,7 +153,7 @@ async function generateMindMapAction() {
         "Building Knowledge Graph..."
     ];
 
-    // Simulate AI Generation (2 seconds total)
+    // Simulate AI Generation (2 seconds total: 4 messages * 500ms)
     for (let i = 0; i < messages.length; i++) {
         loaderMsg.innerText = messages[i];
         await new Promise(r => setTimeout(r, 500));
@@ -162,8 +163,6 @@ async function generateMindMapAction() {
     activeSubject = subjects.find(s => s.name === subName);
     const rootTopic = activeSubject.topics.find(t => t.title === topicName);
 
-    // Mock "Topic-as-Subject" for the tree renderer
-    // We treat the selected topic as the root of the tree
     displayGeneratedMap(subName, rootTopic);
 }
 
@@ -171,21 +170,27 @@ function displayGeneratedMap(subjectName, rootTopic) {
     document.getElementById('mindmap-loading').classList.add('hidden');
     document.getElementById('mindmap-content').classList.remove('hidden');
 
-    document.getElementById('current-subject-title').innerText = rootTopic.title;
+    activeMindMapRoot = rootTopic;
+
+    // Set Header
+    document.getElementById('current-subject-title').innerText = `${subjectName} Mind Map`;
 
     // Setup tree
     const treeRoot = document.getElementById('tree-root');
     treeRoot.innerHTML = '';
 
-    // In our seed, photons/etc are children of the topic
-    // We wrap the single root topic for the renderer
     expandedNodes.clear();
-    expandedNodes.add('gen-root');
-
-    treeRoot.appendChild(createTreeNode(rootTopic, 0, 'gen-root'));
+    // Default expand the root children
+    if (rootTopic.children) {
+        rootTopic.children.forEach((child, idx) => {
+            treeRoot.appendChild(createTreeNode(child, 0, `gen-root-${idx}`));
+        });
+    } else {
+        treeRoot.appendChild(createTreeNode(rootTopic, 0, 'gen-root'));
+    }
 
     const count = countAllNodes([rootTopic]);
-    document.getElementById('topic-count-stats').innerText = `${count} Concepts Found`;
+    document.getElementById('topic-count-stats').innerText = `${count} Nodes Analyzed`;
 
     // Reset notes
     document.getElementById('notes-empty-state').classList.remove('hidden');
@@ -214,7 +219,7 @@ function countAllNodes(nodes) {
     let count = 0;
     nodes.forEach(node => {
         count++;
-        if (node.children && (expandedNodes.has(node.id) || searchQuery)) {
+        if (node.children && node.children.length > 0) {
             count += countAllNodes(node.children);
         }
     });
@@ -282,7 +287,7 @@ function toggleNode(id, topic) {
         expandedNodes.add(id);
     }
     // Simple re-render of the specific root
-    displayGeneratedMap(activeSubject.name, activeSubject.topics.find(t => t.title === document.getElementById('current-subject-title').innerText));
+    displayGeneratedMap(activeSubject.name, activeMindMapRoot);
 }
 
 function selectTopic(topic) {
@@ -313,8 +318,6 @@ function selectTopic(topic) {
     notesContainer.innerHTML = '';
 
     if (topic.note) {
-        // If the note has multiple lines, use them as sections
-        // Otherwise, if it's a long paragraph, split by '.' to create bullets
         let points = [];
         if (topic.note.includes('\n')) {
             points = topic.note.split('\n');
@@ -322,15 +325,18 @@ function selectTopic(topic) {
             points = topic.note.split('.').filter(p => p.trim().length > 0).map(p => p.trim());
         }
 
+        // Set top highlight note
         document.getElementById('note-description').innerText = points[0] || "";
 
+        // Add additional points as bullet sections
         if (points.length > 1) {
-            points.slice(1).forEach(p => {
-                let title = "Detail";
+            points.slice(1).forEach((p, index) => {
+                let title = `Key Point ${index + 1}`;
                 let content = p;
                 if (p.includes(':')) {
-                    [title, ...rest] = p.split(':');
-                    content = rest.join(':');
+                    const parts = p.split(':');
+                    title = parts[0].trim();
+                    content = parts.slice(1).join(':').trim();
                 }
                 notesContainer.appendChild(createNoteSection(title, content));
             });
@@ -366,8 +372,7 @@ function initSearch() {
 
 // Expand/Collapse All
 function expandAll() {
-    const currentRootTitle = document.getElementById('current-subject-title').innerText;
-    const rootTopic = activeSubject.topics.find(t => t.title === currentRootTitle);
+    if (!activeMindMapRoot) return;
 
     function recurse(nodes, parentId) {
         nodes.forEach((node, idx) => {
@@ -378,16 +383,13 @@ function expandAll() {
             }
         });
     }
-    recurse(rootTopic.children || [], 'gen-root');
-    displayGeneratedMap(activeSubject.name, rootTopic);
+    recurse(activeMindMapRoot.children || [], 'gen-root');
+    displayGeneratedMap(activeSubject.name, activeMindMapRoot);
 }
 
 function collapseAll() {
     expandedNodes.clear();
-    expandedNodes.add('gen-root');
-    const currentRootTitle = document.getElementById('current-subject-title').innerText;
-    const rootTopic = activeSubject.topics.find(t => t.title === currentRootTitle);
-    displayGeneratedMap(activeSubject.name, rootTopic);
+    displayGeneratedMap(activeSubject.name, activeMindMapRoot);
 }
 
 function closeModal() {
