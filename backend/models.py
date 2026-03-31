@@ -10,7 +10,11 @@ class Topic(BaseModel):
     decay_status: str = "Strong"
     children: List['Topic'] = []
 
-Topic.update_forward_refs()
+# For Pydantic V2 compatibility
+if hasattr(Topic, "model_rebuild"):
+    Topic.model_rebuild()
+else:
+    Topic.update_forward_refs()
 
 class Subject(BaseModel):
     name: str

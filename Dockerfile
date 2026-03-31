@@ -19,5 +19,5 @@ COPY . .
 # Match Render's expected port or use the one provided
 EXPOSE 8000
 
-# Run the FastAPI app using gunicorn/uvicorn
-CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "backend.main:app"]
+# Run the FastAPI app using gunicorn/uvicorn on the dynamic PORT provided by Render
+CMD gunicorn -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:${PORT:-8000} backend.main:app

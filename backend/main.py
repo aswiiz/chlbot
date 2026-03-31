@@ -92,7 +92,8 @@ def calculate_decay_and_score(last_reviewed: datetime, current_confidence: int):
 
 @app.post("/api/subjects/")
 async def add_subject(subject: Subject):
-    subject_dict = subject.dict()
+    # Pydantic V2 compatibility
+    subject_dict = subject.model_dump() if hasattr(subject, "model_dump") else subject.dict()
     result = await subjects_collection.insert_one(subject_dict)
     return {"id": str(result.inserted_id), **subject_dict}
 
@@ -121,7 +122,8 @@ async def get_subjects():
 
 @app.post("/api/subjects/{subject_name}/topics/")
 async def add_topic(subject_name: str, topic: Topic):
-    topic_dict = topic.dict()
+    # Pydantic V2 compatibility
+    topic_dict = topic.model_dump() if hasattr(topic, "model_dump") else topic.dict()
     # Update subject by adding topic
     await subjects_collection.update_one(
         {"name": subject_name},
@@ -217,4 +219,7 @@ async def ai_chat(req: ChatRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    # Use the port from environment variable if it exists (Render/Heroku/etc)
+    port = int(os.environ.get("PORT", 8000))
+    print(f"Starting server on port {port}")
+    uvicorn.run(app, host="0.0.0.0", port=port)
