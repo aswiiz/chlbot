@@ -78,13 +78,25 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
         }
 
         @keyframes zoomIn {
-            from { transform: scale(0.95); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
+            from {
+                transform: scale(0.95);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
         }
 
         .animate-fadeIn {
@@ -106,8 +118,14 @@
             color: white;
         }
 
-        .mindmap-tree { position: relative; }
-        .tree-node { position: relative; }
+        .mindmap-tree {
+            position: relative;
+        }
+
+        .tree-node {
+            position: relative;
+        }
+
         .children-container {
             position: relative;
             margin-left: 24px;
@@ -125,7 +143,9 @@
             background: rgba(255, 255, 255, 0.1);
         }
 
-        #tree-root > .tree-node > .tree-node-content::before { display: none; }
+        #tree-root>.tree-node>.tree-node-content::before {
+            display: none;
+        }
 
         .tree-node-content {
             border: 1px solid transparent;
@@ -167,8 +187,64 @@
         }
 
         @keyframes pulse-soft {
-            0%, 100% { opacity: 0.6; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.05); }
+
+            0%,
+            100% {
+                opacity: 0.6;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 1;
+                transform: scale(1.05);
+            }
+        }
+
+        /* Flashcard Styles */
+        .flashcard-container {
+            perspective: 1000px;
+            cursor: pointer;
+            height: 200px;
+        }
+
+        .flashcard-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+
+        .flashcard-container.flipped .flashcard-inner {
+            transform: rotateY(180deg);
+        }
+
+        .flashcard-front,
+        .flashcard-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .flashcard-front {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #f1f5f9;
+        }
+
+        .flashcard-back {
+            background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+            color: white;
+            transform: rotateY(180deg);
         }
 
         .ai-pulse-brain {
@@ -195,9 +271,15 @@
                     <span>Dashboard</span>
                 </a>
                 <a href="#" onclick="showView('mindmap-view')"
-                    class="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-600/20 text-blue-400 group border border-blue-500/30">
+                    class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-all text-slate-400 hover:text-white group">
                     <i class="fas fa-project-diagram group-hover:rotate-12 transition-transform"></i>
-                    <span class="font-medium">Mind Map</span>
+                    <span>Mind Map</span>
+                </a>
+                <a href="#" onclick="showView('flashcards-view')"
+                    class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-all text-slate-400 hover:text-white group"
+                    id="nav-flashcards">
+                    <i class="fas fa-id-card group-hover:-rotate-12 transition-transform"></i>
+                    <span>Flash Cards</span>
                 </a>
                 <a href="#" onclick="showView('chat-view')"
                     class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-all text-slate-400 hover:text-white group">
@@ -562,7 +644,100 @@
                     </div>
                 </div>
             </section>
-            <section id="chat-view" class="view p-12 text-center opacity-50">
+            <!-- Flash Cards View -->
+            <section id="flashcards-view" class="view hidden flex flex-col h-[calc(100vh-64px)] overflow-hidden">
+                <!-- Setup Screen -->
+                <div id="flashcards-setup"
+                    class="flex-1 flex flex-col items-center justify-center p-8 bg-gradient-to-b from-[#020617] to-[#0f172a]">
+                    <div
+                        class="max-w-2xl w-full glass p-10 rounded-[2.5rem] shadow-2xl border-white/5 space-y-8 animate-in fade-in zoom-in duration-500">
+                        <div class="text-center space-y-3">
+                            <div
+                                class="w-20 h-20 bg-orange-600 rounded-3xl flex items-center justify-center text-3xl mx-auto shadow-2xl shadow-orange-500/20 mb-6">
+                                <i class="fas fa-clone"></i>
+                            </div>
+                            <h2 class="text-4xl font-extrabold tracking-tight">Active Recall Hub</h2>
+                            <p class="text-slate-400 font-light text-sm">Master your subjects with AI-optimized
+                                flashcards and spaced repetition.</p>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="space-y-2">
+                                <label
+                                    class="text-[10px] uppercase tracking-widest text-slate-500 font-bold ml-1">Select
+                                    Subject</label>
+                                <div class="relative">
+                                    <select id="flash-subject-select" onchange="updateFlashTopicDropdown()"
+                                        class="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white appearance-none focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all cursor-pointer">
+                                        <option value="" disabled selected>Select Subject</option>
+                                    </select>
+                                    <i
+                                        class="fas fa-chevron-down absolute right-6 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"></i>
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <label
+                                    class="text-[10px] uppercase tracking-widest text-slate-500 font-bold ml-1">Select
+                                    Topic</label>
+                                <div class="relative">
+                                    <select id="flash-topic-select"
+                                        class="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white appearance-none focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all cursor-pointer">
+                                        <option value="" disabled selected>Select subject first</option>
+                                    </select>
+                                    <i
+                                        class="fas fa-chevron-down absolute right-6 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="generateFlashCardsAction()"
+                            class="w-full py-5 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-2xl shadow-xl shadow-orange-600/20 transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3">
+                            <i class="fas fa-bolt"></i> Generate Flash Cards
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Loading Screen -->
+                <div id="flashcards-loading"
+                    class="hidden flex-1 flex flex-col items-center justify-center p-8 bg-[#020617]">
+                    <div class="text-center space-y-8 animate-pulse">
+                        <div class="relative">
+                            <div
+                                class="w-24 h-24 border-4 border-orange-500/20 border-t-orange-500 rounded-full animate-spin mx-auto">
+                            </div>
+                            <i
+                                class="fas fa-sparkles text-2xl text-orange-500 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></i>
+                        </div>
+                        <div class="space-y-3">
+                            <h3 class="text-2xl font-bold text-white">Synthesizing Memory Points...</h3>
+                            <div id="flash-loading-messages" class="h-6 text-slate-400 font-light text-sm italic">
+                                Generating Flash Cards...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content Screen -->
+                <div id="flashcards-content" class="hidden flex-1 flex flex-col overflow-hidden">
+                    <div class="px-8 py-4 flex items-center justify-between border-b border-white/5 glass">
+                        <div class="flex items-center gap-4">
+                            <button onclick="resetFlashSetup()"
+                                class="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400"><i
+                                    class="fas fa-arrow-left"></i></button>
+                            <div>
+                                <h1 class="text-xl font-bold text-white" id="flash-current-topic">Chemistry</h1>
+                                <p class="text-[10px] text-slate-500 uppercase tracking-widest"
+                                    id="flash-current-subject">Water Characteristics</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs text-slate-400" id="flash-stats">0 Cards in 0 Sections</span>
+                        </div>
+                    </div>
+                    <div class="flex-1 overflow-y-auto p-8 space-y-10 scroll-smooth" id="flashcard-sections-container">
+                        <!-- Sections will be injected here -->
+                    </div>
+                </div>
+            </section>
+
+            <section id="chat-view" class="view hidden p-12 text-center opacity-50">
                 <i class="fas fa-robot text-6xl mb-4"></i>
                 <h2 class="text-2xl">AI Assistant</h2>
                 <p>Returning in the next update.</p>

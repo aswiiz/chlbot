@@ -7,6 +7,7 @@ let activeMindMapRoot = null;
 let activeTopicNode = null;
 let expandedNodes = new Set();
 let searchQuery = "";
+let activeFlashcards = [];
 
 // Init
 document.addEventListener('DOMContentLoaded', () => {
@@ -19,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
 async function initApp() {
     await fetchSubjects();
     populateSubjectDropdown();
+    populateFlashSubjectDropdown();
 }
 
 // View Logic Fix
@@ -40,12 +42,20 @@ function showView(viewId) {
         // Update Sidebar Active State
         const sidebarLink = document.querySelector(`a[onclick="showView('${viewId}')"]`);
         if (sidebarLink) {
-            sidebarLink.classList.add('bg-blue-600/20', 'text-blue-400', 'border-blue-500/30');
+            // Check if it's flashcards to use orange
+            if (viewId === 'flashcards-view') {
+                sidebarLink.classList.add('bg-orange-600/20', 'text-orange-400', 'border-orange-500/30');
+            } else {
+                sidebarLink.classList.add('bg-blue-600/20', 'text-blue-400', 'border-blue-500/30');
+            }
             sidebarLink.classList.remove('hover:bg-white/5', 'text-slate-400');
         }
 
         if (viewId === 'mindmap-view' && !activeSubject) {
             resetSetup();
+        }
+        if (viewId === 'flashcards-view') {
+            resetFlashSetup();
         }
         if (viewId === 'dashboard-view') {
             initDashboard();
@@ -437,4 +447,132 @@ function collapseAll() {
 
 function closeModal() {
     document.getElementById('modal-overlay').classList.add('hidden');
+}
+
+// Flash Cards Logic
+function populateFlashSubjectDropdown() {
+    const select = document.getElementById('flash-subject-select');
+    if (!select) return;
+    
+    const subjectsList = subjects || [];
+    select.innerHTML = '<option value="" disabled selected>Select Subject</option>';
+
+    subjectsList.forEach(sub => {
+        const opt = document.createElement('option');
+        opt.value = sub.name;
+        opt.innerText = sub.name;
+        select.add(opt);
+    });
+}
+
+function updateFlashTopicDropdown() {
+    const subName = document.getElementById('flash-subject-select').value;
+    const topicSelect = document.getElementById('flash-topic-select');
+    topicSelect.innerHTML = '<option value="" disabled selected>Select Topic</option>';
+
+    const subject = subjects.find(s => s.name === subName);
+    if (subject && subject.topics) {
+        subject.topics.forEach(t => {
+            const opt = document.createElement('option');
+            opt.value = t.title;
+            opt.innerText = t.title;
+            topicSelect.add(opt);
+        });
+    }
+}
+
+async function generateFlashCardsAction() {
+    const subName = document.getElementById('flash-subject-select').value;
+    const topicName = document.getElementById('flash-topic-select').value;
+
+    if (!subName || !topicName) {
+        alert("Please select both a subject and a topic.");
+        return;
+    }
+
+    const setup = document.getElementById('flashcards-setup');
+    const loading = document.getElementById('flashcards-loading');
+    const content = document.getElementById('flashcards-content');
+    const msg = document.getElementById('flash-loading-messages');
+
+    setup.classList.add('hidden');
+    loading.classList.remove('hidden');
+
+    const steps = [
+        "Analyzing Topic Structure...",
+        "Identifying Educational Objectives...",
+        "Synthesizing Question-Answer Pairs...",
+        "Finalizing Interactive Memory Cards..."
+    ];
+
+    for (let i = 0; i < steps.length; i++) {
+        msg.innerText = steps[i];
+        await new Promise(r => setTimeout(r, 500));
+    }
+
+    const subject = subjects.find(s => s.name === subName);
+    const topic = subject.topics.find(t => t.title === topicName);
+    activeFlashcards = topic.flashcards || [];
+
+    document.getElementById('flash-current-subject').innerText = subName;
+    document.getElementById('flash-current-topic').innerText = topicName;
+    
+    renderFlashcardSections();
+
+    loading.classList.add('hidden');
+    content.classList.remove('hidden');
+}
+
+function renderFlashcardSections() {
+    const container = document.getElementById('flashcard-sections-container');
+    container.innerHTML = '';
+
+    let totalCards = 0;
+    activeFlashcards.forEach((section, sIdx) => {
+        const sectionDiv = document.createElement('div');
+        sectionDiv.className = 'space-y-6';
+        
+        const header = document.createElement('div');
+        header.className = 'flex items-center gap-3 pb-2 border-b border-white/5';
+        header.innerHTML = `
+            <div class="w-8 h-8 rounded-lg bg-orange-600/20 text-orange-400 flex items-center justify-center text-xs font-bold">${sIdx + 1}</div>
+            <h3 class="text-lg font-bold text-slate-200">${section.title}</h3>
+            <span class="text-[10px] bg-white/5 text-slate-500 px-2 py-0.5 rounded-full uppercase tracking-tighter ml-auto">${section.cards.length} Cards</span>
+        `;
+        sectionDiv.appendChild(header);
+
+        const grid = document.createElement('div');
+        grid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
+        
+        section.cards.forEach((card, cIdx) => {
+            totalCards++;
+            const cardEl = document.createElement('div');
+            cardEl.className = 'flashcard-container';
+            cardEl.onclick = function() { this.classList.toggle('flipped'); };
+            
+            cardEl.innerHTML = `
+                <div class="flashcard-inner">
+                    <div class="flashcard-front">
+                        <p class="text-sm font-medium leading-relaxed font-sans">${card.question}</p>
+                        <div class="absolute bottom-4 right-4 text-[10px] text-slate-500 uppercase tracking-widest"><i class="fas fa-redo-alt mr-1"></i> Flip</div>
+                    </div>
+                    <div class="flashcard-back">
+                        <p class="text-sm font-bold leading-relaxed font-sans">${card.answer}</p>
+                    </div>
+                </div>
+            `;
+            grid.appendChild(cardEl);
+        });
+
+        sectionDiv.appendChild(grid);
+        container.appendChild(sectionDiv);
+    });
+
+    document.getElementById('flash-stats').innerText = `${totalCards} Cards in ${activeFlashcards.length} Sections`;
+}
+
+function resetFlashSetup() {
+    document.getElementById('flashcards-content').classList.add('hidden');
+    document.getElementById('flashcards-loading').classList.add('hidden');
+    document.getElementById('flashcards-setup').classList.remove('hidden');
 }
