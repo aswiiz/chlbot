@@ -55,9 +55,12 @@ subjects_collection = db.subjects
 users_collection = db.users
 print(f"DEBUG: Collection initialization complete for clh_database.", flush=True)
 
+VERSION = "1.0.6-final-auth"
+
 @app.on_event("startup")
 async def startup_event():
     try:
+        print(f"Startup: Running CLH Version {VERSION}", flush=True)
         # Check if database is reachable (short timeout)
         print(f"Startup: Connecting to MongoDB (URI: {MONGODB_URI[:20]}...)")
         await client.server_info()
@@ -75,11 +78,8 @@ async def startup_event():
         print(f"IF ON RENDER: Ensure 'MONGODB_URI' environment variable is set to your Atlas cluster URI.")
         print(f"ERROR: {e}")
         print("-" * 50)
-        # We don't crash the server so it can still serve the health checks
-        # and explain the error in logs.
 
 # Mount Frontend static files
-# Assuming the main.py is in /backend and index.html is in /frontend
 frontend_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "frontend")
 app.mount("/static", StaticFiles(directory=frontend_path), name="static")
 
@@ -94,7 +94,6 @@ SAMBANOVA_API_KEY = os.getenv("SAMBANOVA_API_KEY")
 # Global OpenAI Client
 client_openai = None
 if OPENAI_API_KEY:
-    import openai
     client_openai = openai.OpenAI(api_key=OPENAI_API_KEY)
 
 # Models
@@ -105,10 +104,6 @@ def calculate_decay_and_score(last_reviewed: datetime, current_confidence: int):
     now = datetime.utcnow()
     delta = now - last_reviewed
     
-    # 3 days -> Slight fade (decreases confidence by 1)
-    # 7 days -> Yellow zone (decreases confidence by 2)
-    # 14 days -> Red zone (decreases confidence by 3)
-    
     decayed_confidence = current_confidence
     if delta.days >= 14:
         decayed_confidence = max(1, current_confidence - 3)
@@ -117,22 +112,15 @@ def calculate_decay_and_score(last_reviewed: datetime, current_confidence: int):
     elif delta.days >= 3:
         decayed_confidence = max(1, current_confidence - 1)
         
-    # Status determination based on decayed score
-    # 1: Red (Weak)
-    # 2: Orange (Weak-Medium)
-    # 3: Yellow (Medium)
-    # 4: Light Green (Good)
-    # 5: Green (Strong)
-    
     status = "Strong"
     if decayed_confidence == 1:
-        status = "Weak" # Red
+        status = "Weak"
     elif decayed_confidence == 2:
-        status = "Medium-Weak" # Orange
+        status = "Medium-Weak"
     elif decayed_confidence == 3:
-        status = "Medium" # Yellow
+        status = "Medium"
     elif decayed_confidence == 4:
-        status = "Good" # Light Green
+        status = "Good"
         
     return status, decayed_confidence
 
@@ -140,14 +128,15 @@ def calculate_decay_and_score(last_reviewed: datetime, current_confidence: int):
 @app.post("/api/auth/register", response_model=UserResponse)
 async def register(user: User):
     try:
-        print(f"Register: Received password of length {len(user.password)}", flush=True)
+        print(f"Register Auth (v{VERSION}): PassLen={len(user.password)}", flush=True)
         existing = await users_collection.find_one({"email": user.email})
         if existing:
             raise HTTPException(status_code=400, detail="User already registered")
         
-        # Hard truncate to 72 characters string
-        safe_password = user.password[:72]
-        hashed_password = pwd_context.hash(safe_password)
+        # Bcrypt STRICT 72-byte limit
+        pwd_bytes = user.password.encode("utf-8")[:71]
+        hashed_password = pwd_context.hash(pwd_bytes)
+        
         await users_collection.insert_one({"email": user.email, "password": hashed_password})
         return UserResponse(email=user.email, status="success")
     except Exception as e:
@@ -157,13 +146,13 @@ async def register(user: User):
 @app.post("/api/auth/login", response_model=UserResponse)
 async def login(user: User):
     try:
-        print(f"Login: Received password of length {len(user.password)}", flush=True)
+        print(f"Login Auth (v{VERSION}): PassLen={len(user.password)}", flush=True)
         db_user = await users_collection.find_one({"email": user.email})
         if not db_user:
             raise HTTPException(status_code=401, detail="Invalid email or password")
         
-        safe_password = user.password[:72]
-        if not pwd_context.verify(safe_password, db_user["password"]):
+        pwd_bytes = user.password.encode("utf-8")[:71]
+        if not pwd_context.verify(pwd_bytes, db_user["password"]):
             raise HTTPException(status_code=401, detail="Invalid email or password")
             
         return UserResponse(email=user.email, status="logged_in")
