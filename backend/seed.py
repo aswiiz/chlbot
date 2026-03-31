@@ -211,32 +211,76 @@ subjects_data = [
                 ],
                 "flashcards": [
                     {
-                        "title": "Introduction & Basics",
+                        "title": "Introduction",
                         "cards": [
-                            {"question": "Define Photonics.", "answer": "The science of light (photon) generation, detection, and manipulation."},
-                            {"question": "How does Photonics relate to Electronics?", "answer": "Photonics uses photons (light) while electronics uses electrons to carry information."},
-                            {"question": "What fields does Photonics combine?", "answer": "Optics, Quantum Mechanics, and Electromagnetism."}
+                            {"question": "What is Photonics?", "answer": "Photonics is the science of producing, controlling and detecting photons."},
+                            {"question": "Which fields combine to form photonics?", "answer": "Optics, Electromagnetism and Quantum Mechanics."},
+                            {"question": "Applications of photonics?", "answer": "Communication, data processing, transportation, medicine, biotechnology and lighting."}
                         ]
                     },
                     {
-                        "title": "Advantages",
+                        "title": "Advantages of Photonics",
                         "cards": [
-                            {"question": "Why use Photonics for communication?", "answer": "It offers significantly higher bandwidth and lower power consumption than traditional electronics."},
-                            {"question": "Is Photonics more secure?", "answer": "Yes, it provides increased security and higher reliability in data transmission."}
+                            {"question": "What is the bandwidth advantage of photonics?", "answer": "High bandwidth provides faster communication."},
+                            {"question": "Power advantage of photonics?", "answer": "Lower power consumption and less heat."},
+                            {"question": "Security advantage?", "answer": "Harder to intercept signals."},
+                            {"question": "Reliability advantage?", "answer": "Less overheating and longer lifespan."}
                         ]
                     },
                     {
                         "title": "Photodetectors",
                         "cards": [
-                            {"question": "Name the four common types of Photodetectors.", "answer": "Junction, PIN, Avalanche, and Schottky Photodiodes."},
-                            {"question": "What is the primary requirement for a photodetector?", "answer": "High sensitivity and short response time."}
+                            {"question": "What is photodetector?", "answer": "Device that converts light into electrical signal."},
+                            {"question": "Requirements of photodetector?", "answer": "High sensitivity, reliability, short response time and low bias voltage."},
+                            {"question": "Examples of photodetectors?", "answer": "Photodiodes and Phototransistors."}
                         ]
                     },
                     {
-                        "title": "Solar Cells & LEDs",
+                        "title": "Photodiodes",
                         "cards": [
-                            {"question": "What is the Photovoltaic Effect?", "answer": "The generation of voltage and electric current in a material upon exposure to light."},
-                            {"question": "What determines LED colors?", "answer": "The materials used in the semiconductor dictate the wavelength/color of light emitted."}
+                            {"question": "What is photodiode?", "answer": "Reverse biased p-n junction that converts light into current."},
+                            {"question": "Types of photodiodes?", "answer": "Junction, PIN, Avalanche and Schottky."}
+                        ]
+                    },
+                    {
+                        "title": "PIN Photodiode",
+                        "cards": [
+                            {"question": "Structure of PIN photodiode?", "answer": "P-region, intrinsic region and N-region."},
+                            {"question": "Advantages of PIN photodiode?", "answer": "Better efficiency, speed and sensitivity."},
+                            {"question": "Applications of PIN photodiode?", "answer": "Fiber optics, microwave switches and X-ray detection."}
+                        ]
+                    },
+                    {
+                        "title": "Solar Cells",
+                        "cards": [
+                            {"question": "Principle of solar cell?", "answer": "Photovoltaic effect converts sunlight into electricity."},
+                            {"question": "What is open circuit voltage?", "answer": "Voltage when current is zero."},
+                            {"question": "What is short circuit current?", "answer": "Current when voltage is zero."},
+                            {"question": "What is fill factor?", "answer": "FF = Pmax / (Voc × Isc)."}
+                        ]
+                    },
+                    {
+                        "title": "LED",
+                        "cards": [
+                            {"question": "What is LED?", "answer": "Forward biased p-n junction emitting light."},
+                            {"question": "Working of LED?", "answer": "Electron hole recombination produces photons."},
+                            {"question": "LED wavelength formula?", "answer": "λ = hc / Eg"}
+                        ]
+                    },
+                    {
+                        "title": "LED Features",
+                        "cards": [
+                            {"question": "Features of LED?", "answer": "Point source, fast switching and long lifespan."},
+                            {"question": "Advantages of LED?", "answer": "Energy saving, fast response and durable."},
+                            {"question": "Disadvantages of LED?", "answer": "Sensitive to excess voltage."}
+                        ]
+                    },
+                    {
+                        "title": "Quick Revision",
+                        "cards": [
+                            {"question": "Photonics meaning?", "answer": "Photonics = Photons + Electronics."},
+                            {"question": "Solar cell principle?", "answer": "Photovoltaic effect."},
+                            {"question": "GaP LED wavelength?", "answer": "550 nm green light."}
                         ]
                     }
                 ]
