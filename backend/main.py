@@ -241,6 +241,32 @@ async def generate_flashcards(topic: str):
     except Exception as e:
         return {"error": str(e), "flashcards": []}
 
+@app.post("/api/ai/topic_info")
+async def generate_topic_info(topic: str, subject: str = ""):
+    sys_prompt = "Provide a professional, concise AI Core Definition for the given academic topic, followed by 3-4 key bullet points of explanation. Use a clear, educational tone. Separate the definition and points with newlines. No markdown bolding please."
+    prompt = f"Topic: {topic} (Subject: {subject})"
+    
+    try:
+        # Prioritize SambaNova/DeepSeek-R1 for better quality
+        if SAMBANOVA_API_KEY:
+            client = openai.OpenAI(api_key=SAMBANOVA_API_KEY, base_url="https://api.sambanova.ai/v1")
+            response = client.chat.completions.create(
+                model="DeepSeek-R1",
+                messages=[{"role": "system", "content": sys_prompt}, {"role": "user", "content": prompt}]
+            )
+            return {"note": response.choices[0].message.content.strip()}
+            
+        if not client_openai:
+            return {"note": "AI service offline. Definition unavailable."}
+            
+        response = client_openai.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "system", "content": sys_prompt}, {"role": "user", "content": prompt}]
+        )
+        return {"note": response.choices[0].message.content.strip()}
+    except Exception as e:
+        return {"note": f"Error generating content: {str(e)}"}
+
 @app.post("/api/ai/chat")
 async def ai_chat(req: ChatRequest):
     try:

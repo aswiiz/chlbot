@@ -333,35 +333,63 @@ function selectTopic(topic) {
     notesContainer.innerHTML = '';
 
     if (topic.note) {
-        let points = [];
-        if (topic.note.includes('\n')) {
-            points = topic.note.split('\n');
-        } else {
-            points = topic.note.split('.').filter(p => p.trim().length > 0).map(p => p.trim());
-        }
-
-        // Set top highlight note
-        document.getElementById('note-description').innerText = points[0] || "";
-
-        // Add additional points as bullet sections
-        if (points.length > 1) {
-            points.slice(1).forEach((p, index) => {
-                let title = `Key Point ${index + 1}`;
-                let content = p;
-                if (p.includes(':')) {
-                    const parts = p.split(':');
-                    title = parts[0].trim();
-                    content = parts.slice(1).join(':').trim();
-                }
-                notesContainer.appendChild(createNoteSection(title, content));
-            });
-        }
+        renderTopicNote(topic.note);
     } else {
-        document.getElementById('note-description').innerText = "Detailed content is under development or being fetched by AI.";
+        document.getElementById('note-description').innerText = "Generating AI Core Definition...";
+        fetch(`${API_URL}/ai/topic_info?topic=${encodeURIComponent(topic.title)}&subject=${encodeURIComponent(activeSubject ? activeSubject.name : '')}`, {
+            method: 'POST'
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.note) {
+                    topic.note = data.note; // Cache it
+                    renderTopicNote(data.note);
+                }
+            })
+            .catch(err => {
+                document.getElementById('note-description').innerText = "AI Assistant is currently offline. Definition unavailable.";
+            });
     }
 
     document.getElementById('note-confidence-val').innerText = (topic.confidence * 0.96).toFixed(1);
     document.getElementById('note-confidence-bar').style.width = `${topic.confidence * 20}%`;
+}
+
+function renderTopicNote(note) {
+    const notesContainer = document.getElementById('note-sections-container');
+    notesContainer.innerHTML = '';
+
+    let points = [];
+    if (note.includes('\n')) {
+        points = note.split('\n').filter(p => p.trim().length > 0);
+    } else {
+        points = note.split('.').filter(p => p.trim().length > 0).map(p => p.trim());
+    }
+
+    // Set top highlight note
+    document.getElementById('note-description').innerText = points[0] || "";
+
+    // Add additional points as bullet sections
+    if (points.length > 1) {
+        points.slice(1).forEach((p, index) => {
+            let title = `Key Insight ${index + 1}`;
+            let content = p;
+
+            // Try to extract a title if the AI formatted it with ":"
+            if (p.includes(':')) {
+                const parts = p.split(':');
+                if (parts[0].length < 30) { // Only if it looks like a title
+                    title = parts[0].trim();
+                    content = parts.slice(1).join(':').trim();
+                }
+            }
+            // Clean up common bullet prefixes
+            content = content.replace(/^[-*•]\s+/, '');
+            title = title.replace(/^[-*•]\s+/, '');
+
+            notesContainer.appendChild(createNoteSection(title, content));
+        });
+    }
 }
 
 function createNoteSection(title, content) {
