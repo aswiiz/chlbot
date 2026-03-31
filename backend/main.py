@@ -120,24 +120,32 @@ def calculate_decay_and_score(last_reviewed: datetime, current_confidence: int):
 # Auth Endpoints
 @app.post("/api/auth/register", response_model=UserResponse)
 async def register(user: User):
-    existing = await db.users.find_one({"email": user.email})
-    if existing:
-        raise HTTPException(status_code=400, detail="User already registered")
-    
-    hashed_password = pwd_context.hash(user.password)
-    await db.users.insert_one({"email": user.email, "password": hashed_password})
-    return UserResponse(email=user.email, status="success")
+    try:
+        existing = await users_collection.find_one({"email": user.email})
+        if existing:
+            raise HTTPException(status_code=400, detail="User already registered")
+        
+        hashed_password = pwd_context.hash(user.password)
+        await users_collection.insert_one({"email": user.email, "password": hashed_password})
+        return UserResponse(email=user.email, status="success")
+    except Exception as e:
+        print(f"Register Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/auth/login", response_model=UserResponse)
 async def login(user: User):
-    db_user = await db.users.find_one({"email": user.email})
-    if not db_user:
-        raise HTTPException(status_code=401, detail="Invalid email or password")
-    
-    if not pwd_context.verify(user.password, db_user["password"]):
-        raise HTTPException(status_code=401, detail="Invalid email or password")
+    try:
+        db_user = await users_collection.find_one({"email": user.email})
+        if not db_user:
+            raise HTTPException(status_code=401, detail="Invalid email or password")
         
-    return UserResponse(email=user.email, status="logged_in")
+        if not pwd_context.verify(user.password, db_user["password"]):
+            raise HTTPException(status_code=401, detail="Invalid email or password")
+            
+        return UserResponse(email=user.email, status="logged_in")
+    except Exception as e:
+        print(f"Login Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/subjects/")
 async def add_subject(subject: Subject):
