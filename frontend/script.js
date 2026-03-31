@@ -54,7 +54,19 @@ function renderTree() {
         treeRoot.appendChild(createTreeNode(topic, 0, `root-${index}`));
     });
 
-    document.getElementById('topic-count-stats').innerText = `${countVisibleNodes(filteredTopics)} Topics Found`;
+    const totalVisible = countAllNodes(filteredTopics);
+    document.getElementById('topic-count-stats').innerText = `${totalVisible} Topics Found`;
+}
+
+function countAllNodes(nodes) {
+    let count = 0;
+    nodes.forEach(node => {
+        count++;
+        if (node.children && (expandedNodes.has(node.id) || searchQuery)) {
+            count += countAllNodes(node.children);
+        }
+    });
+    return count;
 }
 
 function createTreeNode(topic, depth, id) {
@@ -91,10 +103,11 @@ function createTreeNode(topic, depth, id) {
 
     nodeContent.onclick = (e) => {
         e.stopPropagation();
-        if (hasChildren) {
+        if (hasChildren && e.target.closest('.fa-caret-right')) {
             toggleNode(id);
         } else {
             selectTopic(topic);
+            if (hasChildren && !isExpanded) toggleNode(id);
         }
     };
 
@@ -148,19 +161,28 @@ function toggleNode(id) {
 }
 
 function expandAll() {
-    // Basic implementation: just set all to expanded would require a flat list or recursive search
-    // For now, let's just make a very large query behavior or similar
-    // Simple way: recursively add all IDs (requires ID mapping)
-    alert("Expanding all major branches...");
-    // Just for demo, we'll manually expand top levels
-    for (let i = 0; i < 10; i++) expandedNodes.add(`root-${i}`);
+    if (!activeSubject || !activeSubject.topics) return;
+
+    function recurse(nodes, parentId) {
+        nodes.forEach((node, idx) => {
+            const id = parentId ? `${parentId}-${idx}` : `root-${idx}`;
+            if (node.children && node.children.length > 0) {
+                expandedNodes.add(id);
+                recurse(node.children, id);
+            }
+        });
+    }
+
+    expandedNodes.clear();
+    recurse(activeSubject.topics);
     renderTree();
 }
 
 function collapseAll() {
     expandedNodes.clear();
     searchQuery = "";
-    document.getElementById('global-search').value = "";
+    const searchInput = document.getElementById('global-search');
+    if (searchInput) searchInput.value = "";
     renderTree();
 }
 
@@ -249,14 +271,7 @@ function createNoteSection(title, content) {
 }
 
 function countVisibleNodes(topics) {
-    let count = 0;
-    topics.forEach(t => {
-        count++;
-        if (t.children && (expandedNodes.has(t.id) || searchQuery)) {
-            // This is simplified, for exact count we'd need a recursive sum
-        }
-    });
-    return subjects[0].topics.length + 10; // Mock count for UI aesthetics
+    return countAllNodes(topics);
 }
 
 // UI Modals

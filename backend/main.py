@@ -48,20 +48,7 @@ SAMBANOVA_API_KEY = os.getenv("SAMBANOVA_API_KEY")
 openai.api_key = OPENAI_API_KEY
 
 # Models
-class Topic(BaseModel):
-    name: str
-    confidence: int = Field(1, ge=1, le=5)
-    last_reviewed: datetime = Field(default_factory=datetime.utcnow)
-    decay_status: str = "Strong"
-
-class Subject(BaseModel):
-    name: str
-    topics: List[Topic] = []
-
-class ChatRequest(BaseModel):
-    message: str
-    topic: Optional[str] = None
-    subject: Optional[str] = None
+from backend.models import Topic, Subject, ChatRequest, MindMapResponse, Flashcard, FlashcardsResponse
 
 # Helper Functions
 def calculate_decay_and_score(last_reviewed: datetime, current_confidence: int):
@@ -147,30 +134,46 @@ async def update_topic_confidence(subject_name: str, topic_name: str, confidence
     return {"message": "Confidence updated"}
 
 # AI Endpoints
-@app.post("/api/ai/mindmap")
+@app.post("/api/ai/mindmap", response_model=MindMapResponse)
 async def generate_mindmap(topic: str, subject: str = ""):
     sys_prompt = "Generate a Mermaid.js mind map for the given topic. Only return the Mermaid code (graph LR or mindmap ...). Ensure it is structured hierarchically. Include nodes for: Introduction, Key Concepts, Examples, and Applications."
     prompt = f"Topic: {topic} (Subject: {subject})"
     
     try:
-        # Simple OpenAI call (using Sambanova if possible later)
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": sys_prompt},
-                {"role": "user", "content": prompt}
-            ]
-        )
-        mermaid_code = response.choices[0].message.content.strip()
-        # Clean up code blocks if present
-        if mermaid_code.startswith("```mermaid"):
-            mermaid_code = mermaid_code[10:-3]
-        elif mermaid_code.startswith("```"):
-            mermaid_code = mermaid_code[3:-3]
+        # Check if we should use SambaNova
+        if SAMBANOVA_API_KEY:
+            client = openai.OpenAI(
+                api_key=SAMBANOVA_API_KEY,
+                base_url="https://api.sambanova.ai/v1",
+            )
+            response = client.chat.completions.create(
+                model="DeepSeek-R1",
+                messages=[
+                    {"role": "system", "content": sys_prompt},
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            mermaid_code = response.choices[0].message.content.strip()
+        else:
+            # Fallback to OpenAI
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": sys_prompt},
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            mermaid_code = response.choices[0].message.content.strip()
         
-        return {"mermaid_code": mermaid_code}
+        # Clean up code blocks if present
+        if "```mermaid" in mermaid_code:
+            mermaid_code = mermaid_code.split("```mermaid")[1].split("```")[0].strip()
+        elif "```" in mermaid_code:
+            mermaid_code = mermaid_code.split("```")[1].split("```")[0].strip()
+        
+        return MindMapResponse(mermaid_code=mermaid_code)
     except Exception as e:
-        return {"error": str(e), "mermaid_code": f"graph TD\n    A[{topic}] --> B[No AI response, try again]"}
+        return MindMapResponse(mermaid_code=f"graph TD\n    A[{topic}] --> B[No AI response, try again]")
 
 @app.post("/api/ai/flashcards")
 async def generate_flashcards(topic: str):
