@@ -10,6 +10,7 @@ from fastapi.responses import FileResponse
 import openai
 import json
 from .seed import subjects_data
+from dotenv import load_dotenv
 
 load_dotenv()
 
