@@ -8,3 +8,5 @@ python-dotenv
 gunicorn
 uvicorn[standard]
 pydantic
+passlib[bcrypt]
+python-jose

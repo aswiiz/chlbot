@@ -253,8 +253,60 @@
     </style>
 </head>
 
-<body class="h-screen overflow-hidden">
-    <div class="flex h-full">
+<body class="h-screen overflow-hidden bg-[#020617] text-white font-sans">
+    <!-- Auth Overlay -->
+    <div id="auth-overlay" class="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#020617]">
+        <div
+            class="max-w-md w-full glass p-10 rounded-[2.5rem] shadow-2xl border-white/5 space-y-8 animate-in fade-in zoom-in duration-700">
+            <div class="text-center space-y-3">
+                <div
+                    class="w-20 h-20 bg-blue-600 rounded-3xl flex items-center justify-center text-3xl mx-auto shadow-2xl shadow-blue-500/20 mb-6">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <h2 id="auth-title" class="text-4xl font-extrabold tracking-tight">Welcome to CLH</h2>
+                <p id="auth-subtitle" class="text-slate-400 font-light">Your intelligent cognitive learning workspace.
+                </p>
+            </div>
+
+            <!-- Forms -->
+            <div id="auth-forms" class="space-y-4">
+                <div class="space-y-2">
+                    <label class="text-[10px] uppercase tracking-widest text-slate-500 font-bold ml-1">Email
+                        Address</label>
+                    <input id="auth-email" type="email" placeholder="name@college.edu"
+                        class="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-light">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[10px] uppercase tracking-widest text-slate-500 font-bold ml-1">Password</label>
+                    <input id="auth-password" type="password" placeholder="••••••••"
+                        class="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-light">
+                </div>
+
+                <div class="pt-4 space-y-4">
+                    <button id="auth-main-btn" onclick="handleAuthSubmit()"
+                        class="w-full py-5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-2xl shadow-xl shadow-blue-600/20 transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3">
+                        <i class="fas fa-sign-in-alt"></i>
+                        <span>Sign In</span>
+                    </button>
+
+                    <button onclick="toggleAuthMode()"
+                        class="w-full py-2 text-sm text-slate-400 hover:text-white transition-colors">
+                        Don't have an account? <span class="text-blue-400 font-bold" id="auth-toggle-link">Sign
+                            Up</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="auth-loading" class="hidden text-center py-12 space-y-4">
+                <div class="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mx-auto">
+                </div>
+                <p class="text-slate-400 text-sm">Synchronizing neural pathways...</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-container" class="flex h-full blur-xl pointer-events-none transition-all duration-1000">
         <!-- Sidebar -->
         <aside class="w-64 glass h-full flex flex-col border-r border-white/10 shrink-0">
             <div class="p-6 flex items-center gap-3">
@@ -291,6 +343,12 @@
                     class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-all text-slate-400 hover:text-white group">
                     <i class="fas fa-cog group-hover:rotate-90 transition-transform"></i>
                     <span>Settings</span>
+                </a>
+                <div class="h-px bg-white/5 my-4 mx-4"></div>
+                <a href="#" onclick="logout()"
+                    class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-500/10 text-slate-500 hover:text-red-400 transition-all group">
+                    <i class="fas fa-sign-out-alt rotate-180 group-hover:translate-x-1 transition-transform"></i>
+                    <span>Logout Account</span>
                 </a>
             </nav>
 

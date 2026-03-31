@@ -8,14 +8,29 @@ let activeTopicNode = null;
 let expandedNodes = new Set();
 let searchQuery = "";
 let activeFlashcards = [];
+let currentUser = JSON.parse(localStorage.getItem('clh_user')) || null;
+let authMode = 'login'; // login or register
 
 // Init
 document.addEventListener('DOMContentLoaded', () => {
-    initApp();
+    checkAuth();
     initSearch();
-    initDashboard();
-    showView('dashboard-view');
 });
+
+function checkAuth() {
+    const overlay = document.getElementById('auth-overlay');
+    const app = document.getElementById('app-container');
+
+    if (currentUser) {
+        overlay.classList.add('hidden');
+        app.classList.remove('blur-xl', 'pointer-events-none');
+        initApp();
+        showView('dashboard-view');
+        initDashboard();
+    } else {
+        overlay.classList.remove('hidden');
+    }
+}
 
 async function initApp() {
     await fetchSubjects();
@@ -453,7 +468,7 @@ function closeModal() {
 function populateFlashSubjectDropdown() {
     const select = document.getElementById('flash-subject-select');
     if (!select) return;
-    
+
     const subjectsList = subjects || [];
     select.innerHTML = '<option value="" disabled selected>Select Subject</option>';
 
@@ -516,7 +531,7 @@ async function generateFlashCardsAction() {
 
     document.getElementById('flash-current-subject').innerText = subName;
     document.getElementById('flash-current-topic').innerText = topicName;
-    
+
     renderFlashcardSections();
 
     loading.classList.add('hidden');
@@ -531,7 +546,7 @@ function renderFlashcardSections() {
     activeFlashcards.forEach((section, sIdx) => {
         const sectionDiv = document.createElement('div');
         sectionDiv.className = 'space-y-6';
-        
+
         const header = document.createElement('div');
         header.className = 'flex items-center gap-3 pb-2 border-b border-white/5';
         header.innerHTML = `
@@ -543,13 +558,13 @@ function renderFlashcardSections() {
 
         const grid = document.createElement('div');
         grid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
-        
+
         section.cards.forEach((card, cIdx) => {
             totalCards++;
             const cardEl = document.createElement('div');
             cardEl.className = 'flashcard-container';
-            cardEl.onclick = function() { this.classList.toggle('flipped'); };
-            
+            cardEl.onclick = function () { this.classList.toggle('flipped'); };
+
             cardEl.innerHTML = `
                 <div class="flashcard-inner">
                     <div class="flashcard-front">
@@ -575,4 +590,83 @@ function resetFlashSetup() {
     document.getElementById('flashcards-content').classList.add('hidden');
     document.getElementById('flashcards-loading').classList.add('hidden');
     document.getElementById('flashcards-setup').classList.remove('hidden');
+}
+
+// Authentication Logic
+function toggleAuthMode() {
+    authMode = authMode === 'login' ? 'register' : 'login';
+    const title = document.getElementById('auth-title');
+    const subtitle = document.getElementById('auth-subtitle');
+    const btn = document.getElementById('auth-main-btn');
+    const toggleLink = document.getElementById('auth-toggle-link');
+
+    if (authMode === 'register') {
+        title.innerText = 'Create Account';
+        subtitle.innerText = 'Join the next generation of visual learning.';
+        btn.querySelector('span').innerText = 'Create My Account';
+        btn.querySelector('i').className = 'fas fa-user-plus';
+        toggleLink.innerText = 'Sign In';
+    } else {
+        title.innerText = 'Welcome to CLH';
+        subtitle.innerText = 'Your intelligent cognitive learning workspace.';
+        btn.querySelector('span').innerText = 'Sign In';
+        btn.querySelector('i').className = 'fas fa-sign-in-alt';
+        toggleLink.innerText = 'Sign Up';
+    }
+}
+
+async function handleAuthSubmit() {
+    const email = document.getElementById('auth-email').value;
+    const password = document.getElementById('auth-password').value;
+
+    if (!email || !password) {
+        alert("Please enter both email and password.");
+        return;
+    }
+
+    const forms = document.getElementById('auth-forms');
+    const loading = document.getElementById('auth-loading');
+    forms.classList.add('hidden');
+    loading.classList.remove('hidden');
+
+    const endpoint = authMode === 'login' ? '/api/auth/login' : '/api/auth/register';
+
+    try {
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            if (authMode === 'register') {
+                alert("Account created! Please sign in.");
+                authMode = 'register';
+                toggleAuthMode(); // Switch back to login
+                loading.classList.add('hidden');
+                forms.classList.remove('hidden');
+            } else {
+                localStorage.setItem('clh_user', JSON.stringify({ email: data.email }));
+                currentUser = data;
+                window.location.reload(); // Quickest way to re-init app with user state
+            }
+        } else {
+            alert(data.detail || "Authentication failed.");
+            loading.classList.add('hidden');
+            forms.classList.remove('hidden');
+        }
+    } catch (err) {
+        alert("Server connection error.");
+        loading.classList.add('hidden');
+        forms.classList.remove('hidden');
+    }
+}
+
+function logout() {
+    if (confirm("Are you sure you want to log out?")) {
+        localStorage.removeItem('clh_user');
+        window.location.reload();
+    }
 }
