@@ -140,12 +140,13 @@ def calculate_decay_and_score(last_reviewed: datetime, current_confidence: int):
 @app.post("/api/auth/register", response_model=UserResponse)
 async def register(user: User):
     try:
+        print(f"Register: Received password of length {len(user.password)}", flush=True)
         existing = await users_collection.find_one({"email": user.email})
         if existing:
             raise HTTPException(status_code=400, detail="User already registered")
         
-        # Bcrypt has a 72-byte limit. 4 words should be fine, but we'll safeguard.
-        safe_password = user.password.encode('utf-8')[:72].decode('utf-8', 'ignore')
+        # Hard truncate to 72 characters string
+        safe_password = user.password[:72]
         hashed_password = pwd_context.hash(safe_password)
         await users_collection.insert_one({"email": user.email, "password": hashed_password})
         return UserResponse(email=user.email, status="success")
@@ -156,11 +157,12 @@ async def register(user: User):
 @app.post("/api/auth/login", response_model=UserResponse)
 async def login(user: User):
     try:
+        print(f"Login: Received password of length {len(user.password)}", flush=True)
         db_user = await users_collection.find_one({"email": user.email})
         if not db_user:
             raise HTTPException(status_code=401, detail="Invalid email or password")
         
-        safe_password = user.password.encode('utf-8')[:72].decode('utf-8', 'ignore')
+        safe_password = user.password[:72]
         if not pwd_context.verify(safe_password, db_user["password"]):
             raise HTTPException(status_code=401, detail="Invalid email or password")
             
