@@ -37,12 +37,13 @@ subjects_collection = db.subjects
 @app.on_event("startup")
 async def startup_event():
     try:
+        # For development ease: Always sync database with latest seed structure
+        # This ensuring topic re-organizations reflect immediately
+        print("Startup: Syncing database with latest seed.py structure...")
+        await subjects_collection.delete_many({})
+        await subjects_collection.insert_many(json.loads(json.dumps(subjects_data)))
         count = await subjects_collection.count_documents({})
-        print(f"Startup: {count} subjects found.")
-        if count == 0:
-            print("Database empty, auto-seeding...")
-            await subjects_collection.insert_many(subjects_data)
-            print("Database seeded successfully.")
+        print(f"Startup: Sync complete. {count} subjects ready.")
     except Exception as e:
         print(f"Startup error: {e}")
 

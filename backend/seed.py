@@ -73,12 +73,7 @@ subjects_data = [
                         ]
                     }
                 ]
-            }
-        ]
-    },
-    {
-        "name": "Engineering Physics",
-        "topics": [
+            },
             {
                 "title": "Photonics",
                 "confidence": 3,
