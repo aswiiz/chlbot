@@ -95,8 +95,14 @@ function initDashboard() {
 // Data Fetching
 async function fetchSubjects() {
     try {
+        console.log('Fetching subjects from:', API_URL + '/subjects/');
         const res = await fetch(`${API_URL}/subjects/`);
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         subjects = await res.json();
+        console.log('Loaded subjects:', subjects);
+        if (subjects.length === 0) {
+            console.warn('No subjects returned from API. Check if DB is empty or seeded corectly.');
+        }
     } catch (err) {
         console.error('Error loading subjects:', err);
     }
@@ -105,6 +111,11 @@ async function fetchSubjects() {
 function populateSubjectDropdown() {
     const select = document.getElementById('subject-select');
     if (!select) return;
+
+    if (subjects.length === 0) {
+        select.innerHTML = '<option value="" disabled selected>No Subjects Available</option>';
+        return;
+    }
 
     select.innerHTML = '<option value="" disabled selected>Select Subject</option>';
     subjects.forEach(s => {

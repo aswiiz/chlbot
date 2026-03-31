@@ -28,11 +28,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# MongoDB Configuration
+# MongoDB Configuration with timeouts for Render health checks
 MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
-client = AsyncIOMotorClient(MONGODB_URI)
+client = AsyncIOMotorClient(MONGODB_URI, serverSelectionTimeoutMS=5000)
 db = client.clh_database
 subjects_collection = db.subjects
+
+@app.on_event("startup")
+async def startup_event():
+    try:
+        count = await subjects_collection.count_documents({})
+        print(f"Startup: {count} subjects found.")
+        if count == 0:
+            print("Database empty, auto-seeding...")
+            await subjects_collection.insert_many(subjects_data)
+            print("Database seeded successfully.")
+    except Exception as e:
+        print(f"Startup error: {e}")
 
 # Mount Frontend static files
 # Assuming the main.py is in /backend and index.html is in /frontend
@@ -102,18 +114,8 @@ async def add_subject(subject: Subject):
 @app.get("/api/subjects/")
 async def get_subjects():
     try:
-        # If no subjects exist, seed the database automatically
-        count = await subjects_collection.count_documents({})
-        print(f"DEBUG: Current subject count: {count}")
-        if count == 0:
-            print("Database empty, auto-seeding subjects from seed.py...")
-            # We must import inside or at top, already at top.
-            await subjects_collection.insert_many(subjects_data)
-            count = await subjects_collection.count_documents({})
-            print(f"DEBUG: Subjects seeded. New count: {count}")
-            
         subjects = await subjects_collection.find().to_list(100)
-        print(f"DEBUG: Found {len(subjects)} subjects in DB")
+        print(f"API: Returning {len(subjects)} subjects")
     
         def process_node(node):
             last_rev = node.get("last_reviewed")
@@ -240,6 +242,10 @@ async def ai_chat(req: ChatRequest):
         return {"reply": response.choices[0].message.content}
     except Exception as e:
         return {"reply": f"Sorry, AI Assistant is currently offline. Error: {str(e)}"}
+
+@app.get("/api/health")
+async def health_check():
+    return {"status": "ok", "timestamp": datetime.utcnow()}
 
 if __name__ == "__main__":
     import uvicorn
