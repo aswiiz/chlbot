@@ -40,16 +40,31 @@ async function initApp() {
 }
 
 function updateUserProfile() {
-    // ALWAYS display Raj Raswin (as per user request)
+    if (!currentUser) return;
+
     const nameEl = document.getElementById('user-profile-name');
     const roleEl = document.getElementById('user-profile-role');
     const initialsEl = document.getElementById('user-initials-circle');
 
     if (!nameEl || !roleEl || !initialsEl) return;
 
-    nameEl.innerText = "Raj Raswin";
-    roleEl.innerText = "Pro Student";
-    initialsEl.innerText = "RR";
+    // Use name if available, otherwise format from email
+    let displayName = currentUser.name || currentUser.email.split('@')[0].replace(/[._-]/g, ' ').replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+
+    // Extract initials
+    const words = displayName.split(' ').filter(w => w.length > 0);
+    let initials = "";
+    if (words.length >= 2) {
+        initials = words[0][0] + words[1][0];
+    } else if (words.length === 1) {
+        initials = words[0].slice(0, 2);
+    } else {
+        initials = displayName[0] || "?";
+    }
+
+    nameEl.innerText = displayName;
+    roleEl.innerText = currentUser.name ? currentUser.email : "Pro Student";
+    initialsEl.innerText = initials.toUpperCase();
 }
 
 // View Logic Fix
@@ -613,6 +628,7 @@ function toggleAuthMode() {
     const subtitle = document.getElementById('auth-subtitle');
     const btn = document.getElementById('auth-main-btn');
     const toggleLink = document.getElementById('auth-toggle-link');
+    const nameField = document.getElementById('name-field-container');
 
     if (authMode === 'register') {
         title.innerText = 'Create Account';
@@ -620,21 +636,24 @@ function toggleAuthMode() {
         btn.querySelector('span').innerText = 'Create My Account';
         btn.querySelector('i').className = 'fas fa-user-plus';
         toggleLink.innerText = 'Sign In';
+        if (nameField) nameField.classList.remove('hidden');
     } else {
         title.innerText = 'Welcome to CLH';
         subtitle.innerText = 'Your intelligent cognitive learning workspace.';
         btn.querySelector('span').innerText = 'Sign In';
         btn.querySelector('i').className = 'fas fa-sign-in-alt';
         toggleLink.innerText = 'Sign Up';
+        if (nameField) nameField.classList.add('hidden');
     }
 }
 
 async function handleAuthSubmit() {
+    const name = document.getElementById('auth-name') ? document.getElementById('auth-name').value : "";
     const email = document.getElementById('auth-email').value;
     const password = document.getElementById('auth-password').value;
 
-    if (!email || !password) {
-        alert("Please enter both email and password.");
+    if (!email || !password || (authMode === 'register' && !name)) {
+        alert("Please fill in all fields.");
         return;
     }
 
@@ -649,7 +668,7 @@ async function handleAuthSubmit() {
         const response = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
+            body: JSON.stringify({ email, password, name: authMode === 'register' ? name : null })
         });
 
         const data = await response.json();
@@ -657,14 +676,13 @@ async function handleAuthSubmit() {
         if (response.ok) {
             if (authMode === 'register') {
                 alert("Account created! Please sign in.");
-                authMode = 'register';
-                toggleAuthMode(); // Switch back to login
+                toggleAuthMode();
                 loading.classList.add('hidden');
                 forms.classList.remove('hidden');
             } else {
-                localStorage.setItem('clh_user', JSON.stringify({ email: data.email }));
+                localStorage.setItem('clh_user', JSON.stringify({ email: data.email, name: data.name }));
                 currentUser = data;
-                window.location.reload(); // Quickest way to re-init app with user state
+                window.location.reload();
             }
         } else {
             alert(data.detail || "Authentication failed.");

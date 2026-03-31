@@ -22,10 +22,12 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 class User(BaseModel):
     email: str
     password: str
+    name: Optional[str] = None
 
 class UserResponse(BaseModel):
     email: str
     status: str
+    name: Optional[str] = None
 
 app = FastAPI(title="Cognitive Learning Hub")
 
@@ -136,8 +138,8 @@ async def register(user: User):
             raise HTTPException(status_code=400, detail="User already registered")
         
         hashed_password = hashlib.sha256(user.password.encode("utf-8")).hexdigest()
-        await users_collection.insert_one({"email": user.email, "password": hashed_password})
-        return UserResponse(email=user.email, status="success")
+        await users_collection.insert_one({"email": user.email, "password": hashed_password, "name": user.name})
+        return UserResponse(email=user.email, status="success", name=user.name)
     except Exception as e:
         print(f"Register Error: {e}", flush=True)
         raise HTTPException(status_code=500, detail=str(e))
@@ -155,7 +157,7 @@ async def login(user: User):
         if db_user["password"] != current_hash:
             raise HTTPException(status_code=401, detail="Invalid password")
             
-        return UserResponse(email=user.email, status="logged_in")
+        return UserResponse(email=user.email, status="logged_in", name=db_user.get("name", "Student"))
     except Exception as e:
         print(f"Login Error: {e}", flush=True)
         raise HTTPException(status_code=500, detail=str(e))
