@@ -8,7 +8,8 @@ from pydantic import BaseModel, Field
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 import openai
-from dotenv import load_dotenv
+import json
+from .seed import subjects_data
 
 load_dotenv()
 
@@ -99,25 +100,47 @@ async def add_subject(subject: Subject):
 
 @app.get("/api/subjects/")
 async def get_subjects():
-    subjects = await subjects_collection.find().to_list(100)
+    try:
+        # If no subjects exist, seed the database automatically
+        count = await subjects_collection.count_documents({})
+        print(f"DEBUG: Current subject count: {count}")
+        if count == 0:
+            print("Database empty, auto-seeding subjects from seed.py...")
+            # We must import inside or at top, already at top.
+            await subjects_collection.insert_many(subjects_data)
+            count = await subjects_collection.count_documents({})
+            print(f"DEBUG: Subjects seeded. New count: {count}")
+            
+        subjects = await subjects_collection.find().to_list(100)
+        print(f"DEBUG: Found {len(subjects)} subjects in DB")
     
-    def process_node(node):
-        last_rev = node.get("last_reviewed")
-        if last_rev:
-            if isinstance(last_rev, str):
-                last_rev = datetime.fromisoformat(last_rev)
-            status, score = calculate_decay_and_score(last_rev, node.get("confidence", 3))
-            node["decay_status"] = status
-            node["current_score"] = score
-        
-        for child in node.get("children", []):
-            process_node(child)
+        def process_node(node):
+            last_rev = node.get("last_reviewed")
+            if last_rev:
+                if isinstance(last_rev, str):
+                    try:
+                        last_rev = datetime.fromisoformat(last_rev.replace("Z", "+00:00"))
+                    except:
+                        last_rev = datetime.utcnow()
+                status, score = calculate_decay_and_score(last_rev, node.get("confidence", 3))
+                node["decay_status"] = status
+                node["current_score"] = score
+            
+            for child in node.get("children", []):
+                process_node(child)
 
-    for s in subjects:
-        s["id"] = str(s["_id"])
-        del s["_id"]
-        for topic in s.get("topics", []):
-            process_node(topic)
+        for s in subjects:
+            s["id"] = str(s["_id"])
+            if "_id" in s:
+                del s["_id"]
+            for topic in s.get("topics", []):
+                process_node(topic)
+                
+    except Exception as e:
+        print(f"ERROR fetching subjects: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return []
     return subjects
 
 @app.post("/api/subjects/{subject_name}/topics/")
