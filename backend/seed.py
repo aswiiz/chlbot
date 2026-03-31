@@ -18,63 +18,58 @@ subjects_data = [
                 "children": [
                     {
                         "title": "Water Hardness",
-                        "note": "Caused by the presence of multivalent cations in water.",
-                        "confidence": 4,
+                        "confidence": 3,
                         "children": [
-                            {"title": "Temporary Hardness", "note": "Caused by bicarbonates. Removed by boiling. Forms white scum.", "confidence": 5},
-                            {"title": "Permanent Hardness", "note": "Caused by chlorides, sulfates, and nitrates of calcium and magnesium. Boiling won't remove it; processes like ion-exchange are needed.", "confidence": 3},
-                            {"title": "Measurement", "note": "Usually measured in terms of CaCO3 equivalents in parts per million (ppm).", "confidence": 4},
-                            {"title": "Disadvantages", "note": "Scale formation in boilers, excessive soap consumption, and reduced pipe efficiency.", "confidence": 3}
+                            {"title": "Temporary Hardness", "confidence": 3},
+                            {"title": "Permanent Hardness", "confidence": 3},
+                            {"title": "Measurement", "confidence": 3},
+                            {"title": "Disadvantages", "confidence": 3}
                         ]
                     },
                     {
                         "title": "Water Treatment",
-                        "note": "Strategies to make water suitable for industrial or potable use.",
                         "confidence": 3,
                         "children": [
-                            {"title": "Demineralization", "note": "The process of removing all dissolved salts using ion-exchange resins.", "confidence": 4},
-                            {"title": "Reverse Osmosis", "note": "Applying external pressure against the osmotic pressure to purify water through a semi-permeable membrane.", "confidence": 5},
-                            {"title": "Disinfection", "note": "Killing pathogenic microorganisms using chlorination, UV treatment, or ozonization.", "confidence": 4}
-                        ]
-                    },
-                    {
-                        "title": "Sewage Treatment",
-                        "note": "Treatment of municipal wastewater to remove organic and inorganic pollutants.",
-                        "confidence": 2,
-                        "children": [
-                            {"title": "Primary Treatment", "note": "Physical processes like screening and sedimentation to remove floating and large settleable solids.", "confidence": 3},
-                            {"title": "Secondary Treatment", "note": "Biological processes where microbes decompose organic matter (e.g., Activated Sludge Process).", "confidence": 2},
-                            {"title": "Tertiary Treatment", "note": "Advanced treatment to remove nutrients, chemicals, and leftover pathogens.", "confidence": 4}
+                            {"title": "Boiling Method", "confidence": 3},
+                            {"title": "Ion Exchange", "confidence": 3},
+                            {"title": "Reverse Osmosis", "confidence": 3},
+                            {"title": "Demineralization", "confidence": 3}
                         ]
                     },
                     {
                         "title": "Water Quality Parameters",
-                        "note": "Indicators used to assess the health of water bodies.",
-                        "confidence": 4,
+                        "confidence": 3,
                         "children": [
-                            {"title": "BOD", "note": "Biochemical Oxygen Demand (BOD) is the amount of oxygen needed by microbes to decompose organic matter.", "confidence": 4},
-                            {"title": "COD", "note": "Chemical Oxygen Demand (COD) measures the amount of oxygen required for chemical oxidation of pollutants.", "confidence": 3},
-                            {"title": "Dissolved Oxygen", "note": "Levels of oxygen present in water, critical for aquatic life survival.", "confidence": 5}
+                            {"title": "Dissolved Oxygen", "confidence": 3},
+                            {"title": "BOD", "confidence": 3},
+                            {"title": "COD", "confidence": 3}
+                        ]
+                    },
+                    {
+                        "title": "Sewage Treatment",
+                        "confidence": 3,
+                        "children": [
+                            {"title": "Primary Treatment", "confidence": 3},
+                            {"title": "Secondary Treatment", "confidence": 3},
+                            {"title": "Tertiary Treatment", "confidence": 3}
                         ]
                     },
                     {
                         "title": "Waste Management",
-                        "note": "Techniques for handling and reducing waste generated from human activities.",
-                        "confidence": 5,
+                        "confidence": 3,
                         "children": [
-                            {"title": "E-Waste", "note": "Electronics that have reached the end of their useful life. Contains hazardous materials like lead and mercury.", "confidence": 5},
-                            {"title": "4R Concept", "note": "Reduce, Reuse, Recycle, and Recover. The cornerstone of modern sustainability.", "confidence": 5},
-                            {"title": "Sustainable Development", "note": "Development that meets present needs without compromising future generations.", "confidence": 5}
+                            {"title": "E-Waste", "confidence": 3},
+                            {"title": "4R Concept", "confidence": 3},
+                            {"title": "Sustainable Development", "confidence": 3}
                         ]
                     },
                     {
                         "title": "Environmental Issues",
-                        "note": "Global challenges affecting the biosphere.",
-                        "confidence": 1,
+                        "confidence": 3,
                         "children": [
-                            {"title": "Greenhouse Effect", "note": "Trapping of heat by gases like CO2 and Methane, leading to global temperature rise.", "confidence": 1},
-                            {"title": "Ozone Depletion", "note": "Breakdown of the ozone layer by CFCs, letting in harmful UV rays.", "confidence": 2},
-                            {"title": "Global Warming", "note": "The long-term heating of Earth's climate system observed since the pre-industrial period.", "confidence": 1}
+                            {"title": "Greenhouse Effect", "confidence": 3},
+                            {"title": "Ozone Layer Depletion", "confidence": 3},
+                            {"title": "Global Warming", "confidence": 3}
                         ]
                     }
                 ]
@@ -86,22 +81,84 @@ subjects_data = [
         "topics": [
             {
                 "title": "Photonics",
-                "confidence": 4,
+                "confidence": 3,
                 "children": [
-                    {"title": "Introduction", "note": "Photonics is the science of light particles (photons) generation and control. It bridges physics and electrical engineering.", "confidence": 5},
-                    {"title": "Advantages", "note": "High speed signal propagation, immunity to electromagnetic interference (EMI), and low power loss during transmission.", "confidence": 4},
                     {
-                        "title": "Photodetectors",
-                        "note": "Sensors that convert light into electrical currents.",
+                        "title": "Introduction",
                         "confidence": 3,
                         "children": [
-                            {"title": "Types", "note": "Common types: Photodiodes (PIN, APD), Phototransistors, and Photoconductors.", "confidence": 3},
-                            {"title": "Requirements", "note": "Key requirements: High sensitivity, fast response time, low noise, and wavelength selectively.", "confidence": 4}
+                            {"title": "Definition", "confidence": 3},
+                            {"title": "Optics", "confidence": 3},
+                            {"title": "Quantum Mechanics", "confidence": 3},
+                            {"title": "Electromagnetism", "confidence": 3}
                         ]
                     },
-                    {"title": "Solar Cells", "note": "Photovoltaic cells that convert light energy directly into electrical energy through the PV effect.", "confidence": 5},
-                    {"title": "LED", "note": "Light Emitting Diodes that emit light when current flows through a p-n junction. Highly efficient.", "confidence": 5},
-                    {"title": "Applications", "note": "Used in fiber-optic communications, medical lasers, optical storage (CD/DVD), and barcode scanning.", "confidence": 4}
+                    {
+                        "title": "Advantages",
+                        "confidence": 3,
+                        "children": [
+                            {"title": "High Bandwidth", "confidence": 3},
+                            {"title": "Low Power Consumption", "confidence": 3},
+                            {"title": "Increased Security", "confidence": 3},
+                            {"title": "Higher Reliability", "confidence": 3}
+                        ]
+                    },
+                    {
+                        "title": "Photodetectors",
+                        "confidence": 3,
+                        "children": [
+                            {
+                                "title": "Types",
+                                "confidence": 3,
+                                "children": [
+                                    {"title": "Junction Photodiode", "confidence": 3},
+                                    {"title": "PIN Photodiode", "confidence": 3},
+                                    {"title": "Avalanche Photodiode", "confidence": 3},
+                                    {"title": "Schottky Photodiode", "confidence": 3}
+                                ]
+                            },
+                            {
+                                "title": "Requirements",
+                                "confidence": 3,
+                                "children": [
+                                    {"title": "High Sensitivity", "confidence": 3},
+                                    {"title": "Short Response Time", "confidence": 3},
+                                    {"title": "Low Bias Voltage", "confidence": 3}
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "title": "Solar Cells",
+                        "confidence": 3,
+                        "children": [
+                            {"title": "Photovoltaic Effect", "confidence": 3},
+                            {"title": "I-V Characteristics", "confidence": 3},
+                            {"title": "Configuration", "confidence": 3},
+                            {"title": "Advantages and Disadvantages", "confidence": 3}
+                        ]
+                    },
+                    {
+                        "title": "LED",
+                        "confidence": 3,
+                        "children": [
+                            {"title": "Working Principle", "confidence": 3},
+                            {"title": "Materials and Colors", "confidence": 3},
+                            {"title": "Features", "confidence": 3},
+                            {"title": "Applications", "confidence": 3}
+                        ]
+                    },
+                    {
+                        "title": "Applications",
+                        "confidence": 3,
+                        "children": [
+                            {"title": "Communication", "confidence": 3},
+                            {"title": "Medicine", "confidence": 3},
+                            {"title": "Consumer Electronics", "confidence": 3},
+                            {"title": "Satellites", "confidence": 3},
+                            {"title": "Automotive Lighting", "confidence": 3}
+                        ]
+                    }
                 ]
             }
         ]
@@ -116,7 +173,7 @@ async def seed():
     # Clear existing
     await subjects_collection.delete_many({})
     await subjects_collection.insert_many(subjects_data)
-    print("Seed data inserted successfully!")
+    print("Seed data updated successfully!")
 
 if __name__ == "__main__":
     asyncio.run(seed())
