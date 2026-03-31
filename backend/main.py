@@ -50,15 +50,25 @@ users_collection = db.users
 @app.on_event("startup")
 async def startup_event():
     try:
-        # For development ease: Always sync database with latest seed structure
-        # This ensuring topic re-organizations reflect immediately
-        print("Startup: Syncing database with latest seed.py structure...")
+        # Check if database is reachable (short timeout)
+        print(f"Startup: Connecting to MongoDB (URI: {MONGODB_URI[:20]}...)")
+        await client.server_info()
+        print("Startup: MongoDB connection successful.")
+
+        # Sync database with latest seed
+        print("Startup: Syncing subjects with latest seed structure...")
         await subjects_collection.delete_many({})
         await subjects_collection.insert_many(json.loads(json.dumps(subjects_data)))
         count = await subjects_collection.count_documents({})
         print(f"Startup: Sync complete. {count} subjects ready.")
     except Exception as e:
-        print(f"Startup error: {e}")
+        print("-" * 50)
+        print(f"STARTUP CRITICAL: Database connection failed!")
+        print(f"IF ON RENDER: Ensure 'MONGODB_URI' environment variable is set to your Atlas cluster URI.")
+        print(f"ERROR: {e}")
+        print("-" * 50)
+        # We don't crash the server so it can still serve the health checks
+        # and explain the error in logs.
 
 # Mount Frontend static files
 # Assuming the main.py is in /backend and index.html is in /frontend
