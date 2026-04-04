@@ -257,7 +257,16 @@ async def generate_mindmap(topic: str, subject: str = ""):
                     {"role": "user", "content": prompt}
                 ]
             )
-            mermaid_code = response.choices[0].message.content.strip()
+            mermaid_code = response.choices[0].message.content
+            
+            # Filter out DeepSeek-R1 thinking blocks if present
+            if "<think>" in mermaid_code and "</think>" in mermaid_code:
+                import re
+                mermaid_code = re.sub(r'<think>.*?</think>', '', mermaid_code, flags=re.DOTALL).strip()
+            elif "<think>" in mermaid_code:
+                mermaid_code = mermaid_code.split("<think>")[0].strip()
+            else:
+                mermaid_code = mermaid_code.strip()
         else:
             # Fallback to OpenAI
             if not client_openai:
@@ -312,7 +321,16 @@ async def generate_topic_info(topic: str, subject: str = ""):
                 model="DeepSeek-R1",
                 messages=[{"role": "system", "content": sys_prompt}, {"role": "user", "content": prompt}]
             )
-            return {"note": response.choices[0].message.content.strip()}
+            content = response.choices[0].message.content
+            
+            # Filter out DeepSeek-R1 thinking blocks if present
+            if "<think>" in content and "</think>" in content:
+                import re
+                content = re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL).strip()
+            elif "<think>" in content: # If it's cut off
+                content = content.split("<think>")[0].strip()
+                
+            return {"note": content}
             
         if not client_openai:
             return {"note": "AI service offline. Definition unavailable."}

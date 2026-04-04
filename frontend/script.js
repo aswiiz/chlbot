@@ -416,47 +416,27 @@ function renderTopicNote(note) {
     const notesContainer = document.getElementById('note-sections-container');
     notesContainer.innerHTML = '';
 
-    let points = [];
-    if (note.includes('\n')) {
-        points = note.split('\n').filter(p => p.trim().length > 0);
-    } else {
-        points = note.split('.').filter(p => p.trim().length > 0).map(p => p.trim());
-    }
+    // Safety check: Filter out <think> blocks if any still exist
+    const cleanNote = note.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
 
-    // Set top highlight note
-    document.getElementById('note-description').innerText = points[0] || "";
+    let points = cleanNote.split('\n').filter(p => p.trim().length > 0);
 
-    // Add additional points as bullet sections
-    if (points.length > 1) {
-        points.slice(1).forEach((p, index) => {
-            let title = `Key Insight ${index + 1}`;
-            let content = p;
+    if (points.length > 0) {
+        // First paragraph is the description
+        document.getElementById('note-description').innerText = points[0];
 
-            // Try to extract a title if the AI formatted it with ":"
-            if (p.includes(':')) {
-                const parts = p.split(':');
-                if (parts[0].length < 30) { // Only if it looks like a title
-                    title = parts[0].trim();
-                    content = parts.slice(1).join(':').trim();
-                }
+        // Rest are bullet points or sub-sections
+        points.slice(1).forEach(p => {
+            // Clean up common bullet prefixes and just render the text
+            const cleanPoint = p.replace(/^[-*•]\s+/, '').trim();
+            if (cleanPoint) {
+                const pEl = document.createElement('p');
+                pEl.className = 'text-slate-300 font-light leading-relaxed flex gap-3 text-sm';
+                pEl.innerHTML = `<span class="text-blue-500 mt-1 flex-shrink-0">•</span> <span>${cleanPoint}</span>`;
+                notesContainer.appendChild(pEl);
             }
-            // Clean up common bullet prefixes
-            content = content.replace(/^[-*•]\s+/, '');
-            title = title.replace(/^[-*•]\s+/, '');
-
-            notesContainer.appendChild(createNoteSection(title, content));
         });
     }
-}
-
-function createNoteSection(title, content) {
-    const div = document.createElement('div');
-    div.className = 'space-y-2';
-    div.innerHTML = `
-        <h4 class="text-xs font-bold uppercase tracking-widest text-slate-500">${title}</h4>
-        <p class="text-slate-300 font-light leading-relaxed">${content}</p>
-    `;
-    return div;
 }
 
 // Search Logic
