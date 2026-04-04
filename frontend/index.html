@@ -12,208 +12,172 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-glow: rgba(59, 130, 246, 0.5);
+            --orange: #f97316;
+            --orange-glow: rgba(249, 115, 22, 0.4);
+            --bg-deep: #020617;
+            --glass-bg: rgba(15, 23, 42, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+        }
+
+        html,
         body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
             font-family: 'Outfit', sans-serif;
-            background: #0f172a;
-            color: #f8fafc;
+            background: var(--bg-deep);
+            color: var(--text-main);
+            letter-spacing: -0.01em;
+        }
+
+        #app-container {
+            height: 100vh;
+            width: 100vw;
+            display: flex;
         }
 
         .glass {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
         }
 
-        .mindmap-tree::-webkit-scrollbar {
+        .premium-card {
+            background: linear-gradient(145deg, rgba(30, 41, 59, 0.4), rgba(15, 23, 42, 0.4));
+            border: 1px solid var(--glass-border);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .premium-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+        }
+
+        .premium-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
             width: 6px;
+            height: 6px;
         }
 
-        .mindmap-tree::-webkit-scrollbar-thumb {
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
             background: rgba(255, 255, 255, 0.1);
             border-radius: 10px;
+            transition: background 0.3s;
         }
 
-        .rotate-90 {
-            transform: rotate(90deg);
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
         }
 
-        .transition-transform {
-            transition: transform 0.2s ease;
+        .sidebar-item {
+            position: relative;
+            transition: all 0.3s;
         }
 
-        .view {
-            display: none;
+        .sidebar-item.active {
+            background: linear-gradient(90deg, rgba(59, 130, 246, 0.1) 0%, transparent 100%);
+            color: white !important;
         }
 
-        .view.active {
-            display: block;
+        .sidebar-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 20%;
+            bottom: 20%;
+            width: 3px;
+            background: var(--primary);
+            border-radius: 0 4px 4px 0;
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        .sidebar-item.active-orange {
+            background: linear-gradient(90deg, rgba(249, 115, 22, 0.1) 0%, transparent 100%);
+            color: white !important;
+        }
+
+        .sidebar-item.active-orange::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 20%;
+            bottom: 20%;
+            width: 3px;
+            background: var(--orange);
+            border-radius: 0 4px 4px 0;
+            box-shadow: 0 0 10px var(--orange-glow);
         }
 
         .status-dot {
-            width: 8px;
-            height: 8px;
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
             display: inline-block;
-            margin-right: 8px;
+            box-shadow: 0 0 8px currentColor;
         }
 
-        .status-red {
-            background: #ef4444;
-            box-shadow: 0 0 8px #ef4444;
-        }
-
-        .status-yellow {
-            background: #f59e0b;
-            box-shadow: 0 0 8px #f59e0b;
-        }
-
-        .status-green {
-            background: #10b981;
-            box-shadow: 0 0 8px #10b981;
-        }
-
-        .search-highlight {
-            background: rgba(56, 189, 248, 0.3);
-            border-radius: 2px;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-
-            to {
-                opacity: 1;
-            }
-        }
-
-        @keyframes zoomIn {
-            from {
-                transform: scale(0.95);
-                opacity: 0;
-            }
-
-            to {
-                transform: scale(1);
-                opacity: 1;
-            }
-        }
-
-        .animate-fadeIn {
-            animation: fadeIn 0.5s ease-out forwards;
-        }
-
-        .animate-zoomIn {
-            animation: zoomIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
-        .setup-card {
-            background: rgba(30, 41, 59, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        }
-
-        select option {
-            background: #0f172a;
-            color: white;
-        }
-
-        .mindmap-tree {
-            position: relative;
-        }
-
-        .tree-node {
-            position: relative;
-        }
-
-        .children-container {
-            position: relative;
-            margin-left: 24px;
-            padding-left: 12px;
-            border-left: 1px dashed rgba(255, 255, 255, 0.1);
-        }
-
-        .tree-node-content::before {
-            content: '';
-            position: absolute;
-            left: -12px;
-            top: 20px;
-            width: 12px;
-            height: 1px;
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        #tree-root>.tree-node>.tree-node-content::before {
-            display: none;
-        }
-
+        /* Mind Map Tree Improvements */
         .tree-node-content {
             border: 1px solid transparent;
-            border-radius: 12px;
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            border-radius: 14px;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
             position: relative;
+            background: rgba(255, 255, 255, 0.02);
         }
 
         .tree-node-content:hover {
-            background: rgba(59, 130, 246, 0.1);
-            border-color: rgba(59, 130, 246, 0.2);
-            transform: translateX(4px);
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+            transform: translateX(6px);
         }
 
         .tree-node-content.selected {
-            background: rgba(59, 130, 246, 0.15);
-            border-color: rgba(59, 130, 246, 0.4);
-            box-shadow: 0 4px 12px -2px rgba(59, 130, 246, 0.2);
-        }
-
-        .note-bullet {
-            display: flex;
-            gap: 12px;
-            padding-bottom: 12px;
-        }
-
-        .note-bullet-icon {
-            width: 18px;
-            height: 18px;
-            border-radius: 6px;
             background: rgba(59, 130, 246, 0.1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #3b82f6;
-            font-size: 10px;
-            margin-top: 2px;
-            flex-shrink: 0;
+            border-color: rgba(59, 130, 246, 0.3);
+            box-shadow: 0 8px 24px -4px rgba(59, 130, 246, 0.2);
         }
 
-        @keyframes pulse-soft {
-
-            0%,
-            100% {
-                opacity: 0.6;
-                transform: scale(1);
-            }
-
-            50% {
-                opacity: 1;
-                transform: scale(1.05);
-            }
+        .children-container {
+            margin-left: 28px;
+            padding-left: 14px;
+            border-left: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         /* Flashcard Styles */
         .flashcard-container {
-            perspective: 2000px;
-            cursor: pointer;
+            perspective: 2500px;
             width: 100%;
             height: 100%;
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .flashcard-inner {
             position: relative;
             width: 100%;
             height: 100%;
-            text-align: center;
             transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
             transform-style: preserve-3d;
         }
@@ -227,35 +191,79 @@
             position: absolute;
             width: 100%;
             height: 100%;
-            -webkit-backface-visibility: hidden;
             backface-visibility: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 40px;
-            border-radius: 2.5rem;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            padding: 48px;
+            border-radius: 3rem;
+            box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.7);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .flashcard-front {
-            background: linear-gradient(145deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9));
+            background: radial-gradient(circle at 0% 0%, rgba(30, 41, 59, 1) 0%, rgba(15, 23, 42, 1) 100%);
             color: #f1f5f9;
         }
 
         .flashcard-back {
-            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            background: linear-gradient(135deg, #fb923c 0%, #f97316 50%, #ea580c 100%);
             color: white;
             transform: rotateY(180deg);
-            box-shadow: 0 20px 40px -10px rgba(234, 88, 12, 0.3);
-        }
-
-        .flashcard-container.active {
-            filter: drop-shadow(0 0 20px rgba(249, 115, 22, 0.1));
         }
 
         .ai-pulse-brain {
-            animation: pulse-soft 2s infinite ease-in-out;
+            animation: pulse-soft 3s infinite ease-in-out;
+        }
+
+        @keyframes pulse-soft {
+
+            0%,
+            100% {
+                opacity: 0.4;
+                transform: scale(1);
+                filter: blur(0px);
+            }
+
+            50% {
+                opacity: 1;
+                transform: scale(1.1);
+                filter: blur(1px);
+            }
+        }
+
+        /* Slide animations */
+        .translate-x-full {
+            transform: translateX(100%);
+        }
+
+        .-translate-x-full {
+            transform: translateX(-100%);
+        }
+
+        .opacity-0 {
+            opacity: 0;
+        }
+
+        .view {
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         /* Slide animations */
@@ -333,577 +341,690 @@
 
     <div id="app-container" class="flex h-full blur-xl pointer-events-none transition-all duration-1000">
         <!-- Sidebar -->
-        <aside class="w-64 glass h-full flex flex-col border-r border-white/10 shrink-0">
-            <div class="p-6 flex items-center gap-3">
-                <div class="bg-blue-600 p-2 rounded-lg">
-                    <i class="fas fa-brain text-xl"></i>
+        <aside class="w-72 glass h-full flex flex-col border-r border-white/5 shrink-0 z-50">
+            <div class="p-8 flex items-center gap-4">
+                <div
+                    class="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+                    <i class="fas fa-brain text-white text-xl"></i>
                 </div>
-                <span class="text-xl font-bold tracking-tight">CLH AI</span>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight text-white">CLH <span class="text-blue-500">AI</span>
+                    </h1>
+                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Cognitive Hub</p>
+                </div>
             </div>
 
-            <nav class="flex-1 px-4 space-y-2 mt-4">
+            <nav class="flex-1 px-4 space-y-1.5 mt-4">
                 <a href="#" onclick="showView('dashboard-view')"
-                    class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-all text-slate-400 hover:text-white group">
-                    <i class="fas fa-th-large group-hover:scale-110 transition-transform"></i>
-                    <span>Dashboard</span>
+                    class="sidebar-item flex items-center gap-4 px-6 py-4 rounded-2xl transition-all text-slate-400 hover:text-white group"
+                    id="nav-dashboard">
+                    <i class="fas fa-grid-2 text-lg group-hover:scale-110 transition-transform"></i>
+                    <span class="font-semibold text-sm">Dashboard</span>
                 </a>
                 <a href="#" onclick="showView('mindmap-view')"
-                    class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-all text-slate-400 hover:text-white group">
-                    <i class="fas fa-project-diagram group-hover:rotate-12 transition-transform"></i>
-                    <span>Mind Map</span>
+                    class="sidebar-item flex items-center gap-4 px-6 py-4 rounded-2xl transition-all text-slate-400 hover:text-white group"
+                    id="nav-mindmap">
+                    <i class="fas fa-diagram-project text-lg group-hover:rotate-12 transition-transform"></i>
+                    <span class="font-semibold text-sm">Mind Map Pro</span>
                 </a>
                 <a href="#" onclick="showView('flashcards-view')"
-                    class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-all text-slate-400 hover:text-white group"
+                    class="sidebar-item flex items-center gap-4 px-6 py-4 rounded-2xl transition-all text-slate-400 hover:text-white group"
                     id="nav-flashcards">
-                    <i class="fas fa-id-card group-hover:-rotate-12 transition-transform"></i>
-                    <span>Flash Cards</span>
+                    <i class="fas fa-cards text-lg group-hover:-rotate-12 transition-transform"></i>
+                    <span class="font-semibold text-sm">Flash Cards</span>
                 </a>
                 <a href="#" onclick="showView('chat-view')"
-                    class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-all text-slate-400 hover:text-white group"
+                    class="sidebar-item flex items-center gap-4 px-6 py-4 rounded-2xl transition-all text-slate-400 hover:text-white group"
                     id="nav-chat">
-                    <i class="fas fa-robot group-hover:bounce transition-transform"></i>
-                    <span>AI Assistant</span>
+                    <i class="fas fa-sparkles text-lg group-hover:bounce transition-transform"></i>
+                    <span class="font-semibold text-sm">AI Study Mate</span>
                 </a>
+
+                <div class="pt-10 pb-4 px-6">
+                    <span class="text-[10px] uppercase tracking-[0.25em] text-slate-600 font-black">Management</span>
+                </div>
+
                 <a href="#"
-                    class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-all text-slate-400 hover:text-white group">
-                    <i class="fas fa-cog group-hover:rotate-90 transition-transform"></i>
-                    <span>Settings</span>
+                    class="sidebar-item flex items-center gap-4 px-6 py-4 rounded-2xl transition-all text-slate-400 hover:text-white group">
+                    <i class="fas fa-sliders text-lg group-hover:rotate-90 transition-transform"></i>
+                    <span class="font-semibold text-sm">Global Settings</span>
                 </a>
-                <div class="h-px bg-white/5 my-4 mx-4"></div>
                 <a href="#" onclick="logout()"
-                    class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-500/10 text-slate-500 hover:text-red-400 transition-all group">
-                    <i class="fas fa-sign-out-alt rotate-180 group-hover:translate-x-1 transition-transform"></i>
-                    <span>Logout Account</span>
+                    class="sidebar-item flex items-center gap-4 px-6 py-4 rounded-2xl hover:bg-red-500/10 text-slate-500 hover:text-red-400 transition-all group">
+                    <i class="fas fa-power-off text-lg group-hover:scale-110 transition-transform"></i>
+                    <span class="font-semibold text-sm">End Session</span>
                 </a>
             </nav>
 
-            <div class="p-4 mx-4 mb-6 glass rounded-2xl border border-white/5">
-                <div class="flex items-center gap-3">
+            <div
+                class="p-6 m-4 bg-white/[0.03] border border-white/5 rounded-[2rem] transition-all hover:bg-white/[0.05]">
+                <div class="flex items-center gap-4">
                     <div id="user-initials-circle"
-                        class="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center font-bold text-sm">
+                        class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 via-blue-600 to-cyan-400 flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/10">
                         RR</div>
-                    <div class="flex-1">
-                        <p id="user-profile-name" class="text-sm font-semibold truncate max-w-[120px]">Raj Raswin</p>
-                        <p id="user-profile-role" class="text-[10px] text-slate-400 truncate max-w-[120px]">Pro Student
-                        </p>
+                    <div class="flex-1 min-w-0">
+                        <p id="user-profile-name" class="text-sm font-bold text-white truncate">Raj Raswin</p>
+                        <p id="user-profile-role" class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                            Premium Scholar</p>
                     </div>
-                    <i class="fas fa-chevron-right text-xs text-slate-500"></i>
                 </div>
             </div>
         </aside>
 
         <!-- Main Content -->
         <main class="flex-1 flex flex-col h-full bg-[#020617]">
-            <!-- Header -->
-            <header class="h-16 flex items-center justify-between px-8 border-b border-white/5 glass z-10">
-                <div class="flex items-center gap-4 flex-1 max-w-xl">
-                    <div class="relative w-full">
-                        <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
-                        <input id="global-search" type="text" placeholder="Search topics, notes, or concepts..."
-                            class="w-full bg-white/5 border border-white/10 rounded-full py-2 pl-11 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-light">
+            <!-- Global Header -->
+            <header
+                class="fixed top-0 right-0 left-72 h-20 bg-white/[0.02] backdrop-blur-xl border-b border-white/5 flex items-center justify-between px-12 z-40">
+                <div class="flex items-center gap-8">
+                    <div class="relative group w-96">
+                        <i
+                            class="fas fa-search absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 text-sm group-focus-within:text-blue-500 transition-colors"></i>
+                        <input type="text" placeholder="Search knowledge hubs, topics, or AI notes..."
+                            class="w-full bg-white/[0.04] border border-white/5 rounded-2xl py-3.5 pl-14 pr-6 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white/[0.06] transition-all">
                     </div>
                 </div>
 
-                <div class="flex items-center gap-6 ml-8">
-                    <div
-                        class="flex items-center gap-2 px-3 py-1 bg-green-500/10 text-green-400 rounded-full text-xs font-medium border border-green-500/20">
-                        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                        AI Online
+                <div class="flex items-center gap-6">
+                    <button
+                        class="w-11 h-11 rounded-2xl bg-white/[0.04] border border-white/5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/[0.1] transition-all relative">
+                        <i class="fas fa-bell text-lg"></i>
+                        <span
+                            class="absolute top-3 right-3 w-2 h-2 bg-blue-500 rounded-full border-2 border-[#020617]"></span>
+                    </button>
+                    <div class="h-8 w-px bg-white/5"></div>
+                    <div class="flex items-center gap-4">
+                        <div class="text-right hidden sm:block">
+                            <p class="text-xs font-bold text-white">Academic Mode</p>
+                            <p class="text-[10px] text-green-500 font-bold uppercase tracking-widest">Optimized</p>
+                        </div>
+                        <div
+                            class="w-11 h-11 rounded-2xl bg-blue-600/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                            <i class="fas fa-shield-check"></i>
+                        </div>
                     </div>
-                    <button class="p-2 text-slate-400 hover:text-white transition-colors"><i
-                            class="fas fa-bell"></i></button>
-                    <button class="p-2 text-slate-400 hover:text-white transition-colors"><i
-                            class="fas fa-cog"></i></button>
                 </div>
             </header>
 
-            <!-- Mind Map View container -->
-            <section id="mindmap-view" class="view active flex flex-col h-[calc(100vh-64px)] overflow-hidden">
-                <!-- Step 1 & 2: Selection Screen -->
-                <div id="mindmap-setup"
-                    class="flex-1 flex flex-col items-center justify-center p-8 bg-gradient-to-b from-[#020617] to-[#0f172a]">
-                    <div
-                        class="max-w-2xl w-full glass p-10 rounded-[2.5rem] shadow-2xl border-white/5 space-y-8 animate-in fade-in zoom-in duration-500">
-                        <div class="text-center space-y-3">
-                            <div
-                                class="w-20 h-20 bg-blue-600 rounded-3xl flex items-center justify-center text-3xl mx-auto shadow-2xl shadow-blue-500/20 mb-6">
-                                <i class="fas fa-microchip"></i>
-                            </div>
-                            <h2 class="text-4xl font-extrabold tracking-tight">Personalized Mind Map</h2>
-                            <p class="text-slate-400 font-light">Set your focus parameters to let AI construct your
-                                knowledge graph.</p>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="space-y-2">
-                                <label class="text-[10px] uppercase tracking-widest text-slate-500 font-bold ml-1">Step
-                                    1: Select Subject</label>
-                                <div class="relative">
-                                    <select id="subject-select" onchange="updateTopicDropdown()"
-                                        class="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all cursor-pointer">
-                                        <option value="" disabled selected>Loading subjects...</option>
-                                    </select>
-                                    <i
-                                        class="fas fa-chevron-down absolute right-6 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"></i>
-                                </div>
-                            </div>
-                            <div class="space-y-2">
-                                <label class="text-[10px] uppercase tracking-widest text-slate-500 font-bold ml-1">Step
-                                    2: Select Topic</label>
-                                <div class="relative">
-                                    <select id="topic-select"
-                                        class="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all cursor-pointer">
-                                        <option value="" disabled selected>Select subject first</option>
-                                    </select>
-                                    <i
-                                        class="fas fa-chevron-down absolute right-6 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"></i>
-                                </div>
-                            </div>
-                        </div>
-
-                        <button onclick="generateMindMapAction()"
-                            class="w-full py-5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-2xl shadow-xl shadow-blue-600/20 transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3">
-                            <i class="fas fa-magic"></i>
-                            Generate Mind Map
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Step 3: Loading Screen -->
-                <div id="mindmap-loading"
-                    class="hidden flex-1 flex flex-col items-center justify-center p-8 bg-[#020617]">
-                    <div class="text-center space-y-8 animate-pulse">
-                        <div class="relative">
-                            <div
-                                class="w-24 h-24 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mx-auto">
-                            </div>
-                            <i
-                                class="fas fa-brain text-2xl text-blue-500 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></i>
-                        </div>
-                        <div class="space-y-3">
-                            <h3 id="loading-status" class="text-2xl font-bold text-white">AI is generating mind map...
-                            </h3>
-                            <div id="loading-messages" class="h-6 text-slate-400 font-light text-sm italic">
-                                <!-- Dynamic messages typing here -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Step 4: Final Mind Map View -->
-                <div id="mindmap-content" class="hidden flex flex-col h-full overflow-hidden">
-                    <div class="px-8 py-6 flex items-center justify-between bg-white/[0.02] border-b border-white/5">
-                        <div class="flex items-center gap-4">
-                            <button onclick="resetSetup()"
-                                class="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 transition-colors">
-                                <i class="fas fa-arrow-left"></i>
-                            </button>
-                            <div
-                                class="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-xl shadow-lg shadow-blue-500/20">
-                                <i class="fas fa-atom"></i>
-                            </div>
+            <!-- Main Content Area -->
+            <main id="main-content" class="flex-1 overflow-y-auto pt-20 px-12 pb-12">
+                <!-- Dashboard View -->
+                <div id="dashboard-view" class="view active py-12">
+                    <div class="flex flex-col gap-12 max-w-7xl mx-auto">
+                        <!-- Title Section -->
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
                             <div>
-                                <h1 class="text-2xl font-bold tracking-tight text-white" id="current-subject-title">
-                                    PHOTONICS</h1>
-                                <p class="text-xs text-slate-400 mt-0.5">Hierarchical Knowledge Tree & Visual Analytics
-                                </p>
+                                <h2 class="text-4xl font-black text-white tracking-tight mb-2">Academic Overview</h2>
+                                <p class="text-slate-500 font-medium">Welcome back, <span id="welcome-user-name"
+                                        class="text-blue-400">Student</span>. Here is your learning progress.</p>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <div class="glass px-6 py-3 rounded-2xl border border-white/10 flex items-center gap-4">
+                                    <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                                    <span class="text-sm font-bold text-slate-300">Hub Sync Active</span>
+                                </div>
+                                <button onclick="showView('mindmap-view')"
+                                    class="px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-2xl shadow-xl shadow-blue-500/20 transition-all transform hover:scale-[1.03] active:scale-95 flex items-center gap-3">
+                                    <i class="fas fa-plus-circle"></i>
+                                    <span>New Knowledge Hub</span>
                             </div>
                         </div>
-                        <div class="flex items-center gap-3">
-                            <button onclick="expandAll()"
-                                class="px-4 py-2 text-xs font-medium text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-all">Expand
-                                All</button>
-                            <button onclick="collapseAll()"
-                                class="px-4 py-2 text-xs font-medium text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-all">Collapse
-                                All</button>
-                            <div class="h-6 w-px bg-white/10 mx-2"></div>
+
+                        <!-- Stat Cards -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <div class="premium-card p-8 rounded-[2.5rem] group">
+                                <div class="flex justify-between items-start mb-6">
+                                    <div
+                                        class="w-14 h-14 bg-blue-600/10 rounded-2xl flex items-center justify-center text-blue-400 transition-all group-hover:bg-blue-600 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(59,130,246,0.4)]">
+                                        <i class="fas fa-brain-circuit text-2xl"></i>
+                                    </div>
+                                    <div class="flex flex-col items-end">
+                                        <span
+                                            class="px-3 py-1 bg-green-500/10 text-green-400 text-[10px] font-bold uppercase rounded-full border border-green-500/20">Stable</span>
+                                    </div>
+                                </div>
+                                <p class="text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em] mb-1">
+                                    Knowledge Retention</p>
+                                <div class="flex items-baseline gap-2">
+                                    <span class="text-4xl font-black text-white tracking-tight">84.2%</span>
+                                    <span class="text-green-500 text-xs font-bold">+2.1%</span>
+                                </div>
+                            </div>
+
+                            <div class="premium-card p-8 rounded-[2.5rem] group">
+                                <div class="flex justify-between items-start mb-6">
+                                    <div
+                                        class="w-14 h-14 bg-orange-600/10 rounded-2xl flex items-center justify-center text-orange-400 transition-all group-hover:bg-orange-600 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(249,115,22,0.4)]">
+                                        <i class="fas fa-layer-group text-2xl"></i>
+                                    </div>
+                                    <div class="flex flex-col items-end">
+                                        <span
+                                            class="px-3 py-1 bg-orange-500/10 text-orange-400 text-[10px] font-bold uppercase rounded-full border border-orange-500/20">42
+                                            Cards</span>
+                                    </div>
+                                </div>
+                                <p class="text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em] mb-1">Active
+                                    Flashcards</p>
+                                <div class="flex items-baseline gap-2">
+                                    <span class="text-4xl font-black text-white tracking-tight">1,204</span>
+                                    <span
+                                        class="text-slate-400 text-[10px] uppercase font-bold tracking-widest">Mastered</span>
+                                </div>
+                            </div>
+
+                            <div class="premium-card p-8 rounded-[2.5rem] group">
+                                <div class="flex justify-between items-start mb-6">
+                                    <div
+                                        class="w-14 h-14 bg-red-600/10 rounded-2xl flex items-center justify-center text-red-400 transition-all group-hover:bg-red-600 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(239,68,68,0.4)]">
+                                        <i class="fas fa-bolt text-2xl"></i>
+                                    </div>
+                                    <div class="flex flex-col items-end">
+                                        <span
+                                            class="px-3 py-1 bg-red-500/10 text-red-400 text-[10px] font-bold uppercase rounded-full border border-red-500/20">Critical</span>
+                                    </div>
+                                </div>
+                                <p class="text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em] mb-1">Decay
+                                    Alerts</p>
+                                <div class="flex items-baseline gap-2">
+                                    <span class="text-4xl font-black text-white tracking-tight">08</span>
+                                    <span
+                                        class="text-slate-500 text-[10px] uppercase font-bold tracking-widest">Nodes</span>
+                                </div>
+                            </div>
+
+                            <div class="premium-card p-8 rounded-[2.5rem] group">
+                                <div class="flex justify-between items-start mb-6">
+                                    <div
+                                        class="w-14 h-14 bg-purple-600/10 rounded-2xl flex items-center justify-center text-purple-400 transition-all group-hover:bg-purple-600 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(168,85,247,0.4)]">
+                                        <i class="fas fa-trophy text-2xl"></i>
+                                    </div>
+                                    <div class="flex flex-col items-end">
+                                        <span
+                                            class="px-3 py-1 bg-indigo-500/10 text-indigo-400 text-[10px] font-bold uppercase rounded-full border border-indigo-500/20">Top
+                                            5%</span>
+                                    </div>
+                                </div>
+                                <p class="text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em] mb-1">Learning
+                                    Streak</p>
+                                <div class="flex items-baseline gap-2">
+                                    <span class="text-4xl font-black text-white tracking-tight">14</span>
+                                    <span
+                                        class="text-slate-400 text-[10px] uppercase font-bold tracking-widest">Days</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Visual Analytics Row -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <div
+                                class="glass p-10 rounded-[3rem] border border-white/5 space-y-8 relative overflow-hidden group">
+                                <div
+                                    class="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+                                    <i class="fas fa-chart-line text-6xl text-blue-500"></i>
+                                </div>
+                                <div class="relative">
+                                    <h3 class="text-2xl font-bold text-white mb-2">Cognitive Trend</h3>
+                                    <p class="text-slate-500 text-sm font-medium">7-Day knowledge retention projection.
+                                    </p>
+                                </div>
+                                <div class="h-64 flex items-center justify-center">
+                                    <canvas id="retentionChart"></canvas>
+                                </div>
+                            </div>
+
+                            <div
+                                class="glass p-10 rounded-[3rem] border border-white/5 space-y-8 relative overflow-hidden">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h3 class="text-2xl font-bold text-white mb-2">Priority Study Nodes</h3>
+                                        <p class="text-slate-500 text-sm font-medium">Algorithmically prioritized focus
+                                            areas.</p>
+                                    </div>
+                                    <button
+                                        class="text-xs font-bold text-blue-400 uppercase tracking-widest hover:text-white transition-colors">View
+                                        All</button>
+                                </div>
+                                <div class="space-y-4" id="priority-list">
+                                    <!-- Dynamic Study Nodes -->
+                                    <div
+                                        class="flex items-center justify-between p-5 bg-white/[0.03] border border-white/5 rounded-2xl hover:bg-white/[0.06] transition-all cursor-pointer group">
+                                        <div class="flex items-center gap-4">
+                                            <div
+                                                class="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]">
+                                            </div>
+                                            <div>
+                                                <p
+                                                    class="text-sm font-bold text-white group-hover:text-blue-400 transition-colors">
+                                                    Quantum Mechanics Fundamentals</p>
+                                                <p
+                                                    class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                                                    Physics Core</p>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="text-xs font-black text-red-500">CRITICAL</p>
+                                            <p class="text-[10px] text-slate-500 font-bold">24% Retention</p>
+                                        </div>
+                                    </div>
+                                    <div
+                                        class="flex items-center justify-between p-5 bg-white/[0.03] border border-white/5 rounded-2xl hover:bg-white/[0.06] transition-all cursor-pointer group">
+                                        <div class="flex items-center gap-4">
+                                            <div
+                                                class="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.5)]">
+                                            </div>
+                                            <div>
+                                                <p
+                                                    class="text-sm font-bold text-white group-hover:text-blue-400 transition-colors">
+                                                    Optical Fiber Communication</p>
+                                                <p
+                                                    class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                                                    Photonics Hub</p>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="text-xs font-black text-orange-500">DECAYING</p>
+                                            <p class="text-[10px] text-slate-500 font-bold">58% Confidence</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button onclick="showView('mindmap-view')"
+                                    class="w-full py-5 bg-white/5 hover:bg-white/10 text-white text-xs font-bold uppercase tracking-[0.2em] rounded-2xl border border-white/5 transition-all">
+                                    Execute Recovery Session
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mind Map View -->
+                <div id="mindmap-view" class="view h-[calc(100vh-80px)] overflow-hidden">
+                    <div id="mindmap-setup"
+                        class="h-full flex flex-col items-center justify-center p-8 bg-gradient-to-b from-[#020617] to-[#0f172a]">
+                        <div
+                            class="max-w-2xl w-full glass p-10 rounded-[2.5rem] shadow-2xl border-white/5 space-y-8 animate-in fade-in zoom-in duration-500">
+                            <div class="text-center space-y-3">
+                                <div
+                                    class="w-20 h-20 bg-blue-600 rounded-3xl flex items-center justify-center text-3xl mx-auto shadow-2xl shadow-blue-500/20 mb-6">
+                                    <i class="fas fa-microchip"></i>
+                                </div>
+                                <h2 class="text-4xl font-extrabold tracking-tight">Personalized Mind Map</h2>
+                                <p class="text-slate-400 font-light">Set your focus parameters to let AI
+                                    construct your
+                                    knowledge graph.</p>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="space-y-2">
+                                    <label
+                                        class="text-[10px] uppercase tracking-widest text-slate-500 font-bold ml-1">Step
+                                        1: Select Subject</label>
+                                    <div class="relative">
+                                        <select id="subject-select" onchange="updateTopicDropdown()"
+                                            class="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all cursor-pointer">
+                                            <option value="" disabled selected>Loading subjects...</option>
+                                        </select>
+                                        <i
+                                            class="fas fa-chevron-down absolute right-6 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"></i>
+                                    </div>
+                                </div>
+                                <div class="space-y-2">
+                                    <label
+                                        class="text-[10px] uppercase tracking-widest text-slate-500 font-bold ml-1">Step
+                                        2: Select Topic</label>
+                                    <div class="relative">
+                                        <select id="topic-select"
+                                            class="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all cursor-pointer">
+                                            <option value="" disabled selected>Select subject first</option>
+                                        </select>
+                                        <i
+                                            class="fas fa-chevron-down absolute right-6 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"></i>
+                                    </div>
+                                </div>
+                            </div>
+
                             <button onclick="generateMindMapAction()"
-                                class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg shadow-lg shadow-blue-600/25 transition-all flex items-center gap-2">
-                                <i class="fas fa-magic"></i> AI Re-Map
+                                class="w-full py-5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-2xl shadow-xl shadow-blue-600/20 transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3">
+                                <i class="fas fa-magic"></i>
+                                Generate Mind Map
                             </button>
                         </div>
                     </div>
 
-                    <div class="flex-1 flex overflow-hidden">
-                        <div class="w-1/2 h-full flex flex-col border-r border-white/5 p-6 overflow-hidden">
-                            <div class="flex items-center justify-between mb-4">
-                                <span class="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Concept
-                                    Structure</span>
-                                <span class="text-[10px] text-slate-400" id="topic-count-stats">0 Topics Found</span>
+                    <!-- Step 3: Loading Screen -->
+                    <div id="mindmap-loading"
+                        class="hidden flex-1 flex flex-col items-center justify-center p-8 bg-[#020617]">
+                        <div class="text-center space-y-8 animate-pulse">
+                            <div class="relative">
+                                <div
+                                    class="w-24 h-24 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mx-auto">
+                                </div>
+                                <i
+                                    class="fas fa-brain text-2xl text-blue-500 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></i>
                             </div>
-                            <div class="mindmap-tree flex-1 overflow-y-auto pr-4" id="tree-root"></div>
+                            <div class="space-y-3">
+                                <h3 id="loading-status" class="text-2xl font-bold text-white">AI is generating
+                                    mind map...
+                                </h3>
+                                <div id="loading-messages" class="h-6 text-slate-400 font-light text-sm italic">
+                                    <!-- Dynamic messages typing here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Final Mind Map View -->
+                    <div id="mindmap-content" class="hidden flex flex-col h-full overflow-hidden">
+                        <div
+                            class="px-8 py-6 flex items-center justify-between bg-white/[0.02] border-b border-white/5">
+                            <div class="flex items-center gap-4">
+                                <button onclick="resetSetup()"
+                                    class="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 transition-colors">
+                                    <i class="fas fa-arrow-left"></i>
+                                </button>
+                                <div
+                                    class="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-xl shadow-lg shadow-blue-500/20">
+                                    <i class="fas fa-atom"></i>
+                                </div>
+                                <div>
+                                    <h1 class="text-2xl font-bold tracking-tight text-white" id="current-subject-title">
+                                        PHOTONICS</h1>
+                                    <p class="text-xs text-slate-400 mt-0.5">Hierarchical Knowledge Tree &
+                                        Visual Analytics
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <button onclick="expandAll()"
+                                    class="px-4 py-2 text-xs font-medium text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-all">Expand
+                                    All</button>
+                                <button onclick="collapseAll()"
+                                    class="px-4 py-2 text-xs font-medium text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-all">Collapse
+                                    All</button>
+                                <div class="h-6 w-px bg-white/10 mx-2"></div>
+                                <button onclick="generateMindMapAction()"
+                                    class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg shadow-lg shadow-blue-600/25 transition-all flex items-center gap-2">
+                                    <i class="fas fa-magic"></i> AI Re-Map
+                                </button>
+                            </div>
                         </div>
 
-                        <div class="w-1/2 h-full flex flex-col bg-[#030816]/50 relative" id="notes-panel">
-                            <div id="notes-empty-state"
-                                class="absolute inset-0 flex flex-col items-center justify-center p-12 text-center">
-                                <div class="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-6">
-                                    <i class="fas fa-book-open text-3xl text-slate-600"></i>
+                        <div class="flex-1 flex overflow-hidden">
+                            <div class="w-1/2 h-full flex flex-col border-r border-white/5 p-6 overflow-hidden">
+                                <div class="flex items-center justify-between mb-4">
+                                    <span class="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Concept
+                                        Structure</span>
+                                    <span class="text-[10px] text-slate-400" id="topic-count-stats">0 Topics
+                                        Found</span>
                                 </div>
-                                <h2 class="text-xl font-bold text-slate-300 mb-3">No Topic Selected</h2>
-                                <p class="text-slate-500 max-w-xs text-sm font-light leading-relaxed">
-                                    Explore the mind map on the left and click on a final node to reveal detailed study
-                                    notes and metrics.
-                                </p>
+                                <div class="mindmap-tree flex-1 overflow-y-auto pr-4" id="tree-root"></div>
                             </div>
 
-                            <div id="active-note-view" class="hidden h-full flex flex-col">
-                                <div class="p-8 border-b border-white/5 glass">
-                                    <div class="flex items-start justify-between">
-                                        <div class="flex-1">
-                                            <div class="flex items-center gap-3 mb-2">
-                                                <span id="note-status-badge"
-                                                    class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-green-500/20 text-green-400 border border-green-500/20">Strong</span>
-                                                <span
-                                                    class="text-[10px] text-slate-500 uppercase tracking-widest font-medium">Topic
-                                                    Node</span>
-                                            </div>
-                                            <h2 id="note-title"
-                                                class="text-3xl font-extrabold text-white leading-tight">PIN Photodiode
-                                            </h2>
-                                        </div>
+                            <div class="w-1/2 h-full flex flex-col bg-[#030816]/50 relative" id="notes-panel">
+                                <div id="notes-empty-state"
+                                    class="absolute inset-0 flex flex-col items-center justify-center p-12 text-center">
+                                    <div
+                                        class="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-6">
+                                        <i class="fas fa-book-open text-3xl text-slate-600"></i>
                                     </div>
+                                    <h2 class="text-xl font-bold text-slate-300 mb-3">No Topic Selected</h2>
+                                    <p class="text-slate-500 max-w-xs text-sm font-light leading-relaxed">
+                                        Explore the mind map on the left and click on a final node to reveal
+                                        detailed study
+                                        notes and metrics.
+                                    </p>
                                 </div>
-                                <div class="flex-1 overflow-y-auto p-8 space-y-8 scroll-smooth">
-                                    <div class="prose prose-invert max-w-none">
-                                        <div class="bg-white/[0.02] border border-white/5 rounded-3xl p-8 mb-8">
-                                            <p id="note-description"
-                                                class="text-xl text-slate-200 leading-relaxed font-normal"></p>
-                                        </div>
-                                        <div id="note-sections-container" class="space-y-4"></div>
-                                    </div>
-                                    <div class="grid grid-cols-2 gap-4 mt-8">
-                                        <div class="glass rounded-2xl p-4 border border-white/5">
-                                            <p class="text-[10px] text-slate-500 uppercase font-bold mb-1">Confidence
-                                                Score</p>
-                                            <div class="flex items-end gap-2">
-                                                <span id="note-confidence-val"
-                                                    class="text-2xl font-bold text-white"></span>
-                                                <span class="text-xs text-slate-500 mb-1">/ 5.0</span>
+
+                                <div id="active-note-view" class="hidden h-full flex flex-col">
+                                    <div class="p-8 border-b border-white/5 glass">
+                                        <div class="flex items-start justify-between">
+                                            <div class="flex-1">
+                                                <div class="flex items-center gap-3 mb-2">
+                                                    <span id="note-status-badge"
+                                                        class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-green-500/20 text-green-400 border border-green-500/20">Strong</span>
+                                                    <span
+                                                        class="text-[10px] text-slate-500 uppercase tracking-widest font-medium">Topic
+                                                        Node</span>
+                                                </div>
+                                                <h2 id="note-title"
+                                                    class="text-3xl font-extrabold text-white leading-tight">PIN
+                                                    Photodiode
+                                                </h2>
                                             </div>
-                                            <div class="w-full bg-white/5 h-1.5 rounded-full mt-3 overflow-hidden">
-                                                <div id="note-confidence-bar"
-                                                    class="bg-blue-500 h-full rounded-full w-[96%] shadow-[0_0_12px_rgba(59,130,246,0.5)]">
+                                        </div>
+                                    </div>
+                                    <div class="flex-1 overflow-y-auto p-8 space-y-8 scroll-smooth">
+                                        <div class="prose prose-invert max-w-none">
+                                            <div class="bg-white/[0.02] border border-white/5 rounded-3xl p-8 mb-8">
+                                                <p id="note-description"
+                                                    class="text-xl text-slate-200 leading-relaxed font-normal">
+                                                </p>
+                                            </div>
+                                            <div id="note-sections-container" class="space-y-4"></div>
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-4 mt-8">
+                                            <div class="glass rounded-2xl p-4 border border-white/5">
+                                                <p class="text-[10px] text-slate-500 uppercase font-bold mb-1">
+                                                    Confidence
+                                                    Score</p>
+                                                <div class="flex items-end gap-2">
+                                                    <span id="note-confidence-val"
+                                                        class="text-2xl font-bold text-white"></span>
+                                                    <span class="text-xs text-slate-500 mb-1">/ 5.0</span>
+                                                </div>
+                                                <div class="w-full bg-white/5 h-1.5 rounded-full mt-3 overflow-hidden">
+                                                    <div id="note-confidence-bar"
+                                                        class="bg-blue-500 h-full rounded-full w-[96%] shadow-[0_0_12px_rgba(59,130,246,0.5)]">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div id="flashcards-view" class="view h-[calc(100vh-80px)] overflow-hidden">
+                                        <!-- Setup Screen -->
+                                        <div id="flashcards-setup"
+                                            class="h-full flex flex-col items-center justify-center p-8 bg-gradient-to-b from-[#020617] to-[#0f172a]">
+                                            <div
+                                                class="max-w-2xl w-full glass p-10 rounded-[2.5rem] shadow-2xl border-white/5 space-y-8 animate-in fade-in zoom-in duration-500">
+                                                <div class="text-center space-y-3">
+                                                    <div
+                                                        class="w-20 h-20 bg-orange-600 rounded-3xl flex items-center justify-center text-3xl mx-auto shadow-2xl shadow-orange-500/20 mb-6">
+                                                        <i class="fas fa-clone"></i>
+                                                    </div>
+                                                    <h2 class="text-4xl font-extrabold tracking-tight">Active Recall Hub
+                                                    </h2>
+                                                    <p class="text-slate-400 font-light text-sm">Master your subjects
+                                                        with
+                                                        AI-optimized
+                                                        flashcards and spaced repetition.</p>
+                                                </div>
+                                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                    <div class="space-y-2">
+                                                        <label
+                                                            class="text-[10px] uppercase tracking-widest text-slate-500 font-bold ml-1">Select
+                                                            Subject</label>
+                                                        <div class="relative">
+                                                            <select id="flash-subject-select"
+                                                                onchange="updateFlashTopicDropdown()"
+                                                                class="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white appearance-none focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all cursor-pointer text-sm">
+                                                                <option value="" disabled selected>Select Subject
+                                                                </option>
+                                                            </select>
+                                                            <i
+                                                                class="fas fa-chevron-down absolute right-6 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"></i>
+                                                        </div>
+                                                    </div>
+                                                    <div class="space-y-2">
+                                                        <label
+                                                            class="text-[10px] uppercase tracking-widest text-slate-500 font-bold ml-1">Select
+                                                            Topic</label>
+                                                        <div class="relative">
+                                                            <select id="flash-topic-select"
+                                                                onchange="updateFlashSectionDropdown()"
+                                                                class="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white appearance-none focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all cursor-pointer text-sm">
+                                                                <option value="" disabled selected>Select subject first
+                                                                </option>
+                                                            </select>
+                                                            <i
+                                                                class="fas fa-chevron-down absolute right-6 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"></i>
+                                                        </div>
+                                                    </div>
+                                                    <div class="space-y-2">
+                                                        <label
+                                                            class="text-[10px] uppercase tracking-widest text-slate-500 font-bold ml-1">Select
+                                                            Section</label>
+                                                        <div class="relative">
+                                                            <select id="flash-section-select"
+                                                                class="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white appearance-none focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all cursor-pointer text-sm">
+                                                                <option value="" disabled selected>Select topic first
+                                                                </option>
+                                                            </select>
+                                                            <i
+                                                                class="fas fa-chevron-down absolute right-6 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"></i>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <button onclick="generateFlashCardsAction()"
+                                                    class="w-full py-5 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-2xl shadow-xl shadow-orange-600/20 transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3">
+                                                    <i class="fas fa-play"></i> Start Flash Card Session
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Loading Screen -->
+                                        <div id="flashcards-loading"
+                                            class="hidden flex-1 flex flex-col items-center justify-center p-8 bg-[#020617]">
+                                            <div class="text-center space-y-8 animate-pulse">
+                                                <div class="relative">
+                                                    <div
+                                                        class="w-24 h-24 border-4 border-orange-500/20 border-t-orange-500 rounded-full animate-spin mx-auto">
+                                                    </div>
+                                                    <i
+                                                        class="fas fa-sparkles text-2xl text-orange-500 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></i>
+                                                </div>
+                                                <div class="space-y-3">
+                                                    <h3 class="text-2xl font-bold text-white">Synthesizing Memory
+                                                        Points...</h3>
+                                                    <div id="flash-loading-messages"
+                                                        class="h-6 text-slate-400 font-light text-sm italic">
+                                                        Generating Flash Cards...</div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Content Screen -->
+                                        <div id="flashcards-content"
+                                            class="hidden flex-1 flex flex-col overflow-hidden">
+                                            <div
+                                                class="px-8 py-4 flex items-center justify-between border-b border-white/5 glass">
+                                                <div class="flex items-center gap-4">
+                                                    <button onclick="resetFlashSetup()"
+                                                        class="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400"><i
+                                                            class="fas fa-arrow-left"></i></button>
+                                                    <div>
+                                                        <h1 class="text-xl font-bold text-white"
+                                                            id="flash-current-topic">Chemistry
+                                                        </h1>
+                                                        <p class="text-[10px] text-slate-500 uppercase tracking-widest"
+                                                            id="flash-current-subject">Water Characteristics</p>
+                                                    </div>
+                                                </div>
+                                                <div class="flex flex-col items-end">
+                                                    <span
+                                                        class="text-xs font-bold text-orange-500 uppercase tracking-widest"
+                                                        id="flash-section-title">Section Title</span>
+                                                    <span class="text-[10px] text-slate-500"
+                                                        id="flash-card-progress">Card 1 /
+                                                        10</span>
+                                                </div>
+                                            </div>
+
+                                            <div
+                                                class="flex-1 flex flex-col items-center justify-center p-6 relative overflow-hidden">
+                                                <!-- Progress Bar Backdrop -->
+                                                <div class="absolute top-0 left-0 w-full h-1 bg-white/5">
+                                                    <div id="flash-progress-bar"
+                                                        class="h-full bg-orange-500 transition-all duration-300"
+                                                        style="width: 0%">
+                                                    </div>
+                                                </div>
+
+                                                <!-- Card Display Area -->
+                                                <div class="w-full max-w-xl aspect-[4/3] relative flex items-center justify-center"
+                                                    id="flashcard-main-container">
+                                                    <!-- Single Card will be injected here -->
+                                                </div>
+
+                                                <!-- Controls -->
+                                                <div class="flex items-center gap-8 mt-12">
+                                                    <button onclick="prevFlashCard()" id="prev-card-btn"
+                                                        class="w-14 h-14 rounded-full glass border-white/10 flex items-center justify-center text-xl text-slate-400 hover:text-white hover:bg-white/10 transition-all active:scale-90">
+                                                        <i class="fas fa-chevron-left"></i>
+                                                    </button>
+
+                                                    <button onclick="flipCurrentCard()"
+                                                        class="px-10 py-5 bg-orange-600 hover:bg-orange-500 text-white font-extrabold rounded-2xl shadow-xl shadow-orange-600/20 transition-all transform hover:scale-[1.05] active:scale-95 flex items-center gap-3">
+                                                        <i class="fas fa-sync-alt"></i>
+                                                        <span>Flip Card</span>
+                                                    </button>
+
+                                                    <button onclick="nextFlashCard()" id="next-card-btn"
+                                                        class="w-14 h-14 rounded-full glass border-white/10 flex items-center justify-center text-xl text-slate-400 hover:text-white hover:bg-white/10 transition-all active:scale-90">
+                                                        <i class="fas fa-chevron-right"></i>
+                                                    </button>
+                                                </div>
+
+                                                <div class="mt-8 flex gap-4">
+                                                    <div
+                                                        class="flex items-center gap-2 text-[10px] text-slate-500 uppercase tracking-widest font-bold">
+                                                        <span
+                                                            class="px-2 py-0.5 rounded bg-white/5 border border-white/10">Space</span>
+                                                        Flip
+                                                    </div>
+                                                    <div
+                                                        class="flex items-center gap-2 text-[10px] text-slate-500 uppercase tracking-widest font-bold">
+                                                        <span
+                                                            class="px-2 py-0.5 rounded bg-white/5 border border-white/10">←
+                                                            /
+                                                            →</span>
+                                                        Navigate
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
 
-            <!-- Dashboard View -->
-            <section id="dashboard-view" class="view p-12 overflow-y-auto h-[calc(100vh-64px)] scroll-smooth">
-                <div class="max-w-6xl mx-auto space-y-10">
-                    <div class="flex items-end justify-between border-b border-white/5 pb-8">
-                        <div>
-                            <h2 class="text-4xl font-extrabold tracking-tight text-white mb-2">Knowledge Analytics</h2>
-                            <p class="text-slate-400 font-light italic">Real-time cognitive retention tracking & study
-                                optimization.</p>
-                        </div>
-                        <div class="flex gap-4">
-                            <div class="px-5 py-3 glass rounded-2xl flex items-center gap-3">
-                                <i class="fas fa-calendar-alt text-blue-400"></i>
-                                <span class="text-sm font-semibold tracking-wide">March 31, 2026</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Stat Cards -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <div
-                            class="stat-card glass p-8 rounded-[2rem] border-blue-500/10 hover:bg-white/[0.04] transition-all group">
-                            <div class="flex justify-between items-start mb-6">
-                                <div
-                                    class="w-12 h-12 bg-blue-600/20 rounded-2xl flex items-center justify-center text-blue-400 transition-colors group-hover:bg-blue-600 group-hover:text-white">
-                                    <i class="fas fa-brain text-xl"></i>
-                                </div>
-                                <span
-                                    class="px-3 py-1 bg-green-500/20 text-green-400 text-[10px] font-bold uppercase rounded-full">Active</span>
-                            </div>
-                            <h3 class="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Retention Index
-                            </h3>
-                            <div class="flex items-baseline gap-2">
-                                <span class="text-4xl font-extrabold text-white">82%</span>
-                                <span class="text-green-400 text-xs font-semibold">+4.2%</span>
-                            </div>
-                        </div>
-
-                        <div
-                            class="stat-card glass p-8 rounded-[2rem] border-orange-500/10 hover:bg-white/[0.04] transition-all group">
-                            <div class="flex justify-between items-start mb-6">
-                                <div
-                                    class="w-12 h-12 bg-orange-600/20 rounded-2xl flex items-center justify-center text-orange-400 transition-colors group-hover:bg-orange-600 group-hover:text-white">
-                                    <i class="fas fa-clone text-xl"></i>
-                                </div>
-                                <span
-                                    class="px-3 py-1 bg-orange-500/20 text-orange-400 text-[10px] font-bold uppercase rounded-full">32
-                                    Cards</span>
-                            </div>
-                            <h3 class="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Flashcard
-                                Mastery
-                            </h3>
-                            <div class="flex items-baseline gap-2">
-                                <span class="text-4xl font-extrabold text-white">45%</span>
-                                <span class="text-green-400 text-xs font-semibold">+8%</span>
-                            </div>
-                        </div>
-
-                        <div
-                            class="stat-card glass p-8 rounded-[2rem] border-red-500/10 hover:bg-white/[0.04] transition-all group">
-                            <div class="flex justify-between items-start mb-6">
-                                <div
-                                    class="w-12 h-12 bg-red-600/20 rounded-2xl flex items-center justify-center text-red-400 transition-colors group-hover:bg-red-600 group-hover:text-white">
-                                    <i class="fas fa-hourglass-half text-xl"></i>
-                                </div>
-                                <span
-                                    class="px-3 py-1 bg-red-500/20 text-red-400 text-[10px] font-bold uppercase rounded-full">Attention
-                                    Needed</span>
-                            </div>
-                            <h3 class="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Knowledge Decay
-                            </h3>
-                            <div class="flex items-baseline gap-2">
-                                <span class="text-4xl font-extrabold text-white">12</span>
-                                <span class="text-slate-500 text-xs font-medium uppercase tracking-tighter">Nodes</span>
-                            </div>
-                        </div>
-
-                        <div
-                            class="stat-card glass p-8 rounded-[2rem] border-purple-500/10 hover:bg-white/[0.04] transition-all group">
-                            <div class="flex justify-between items-start mb-6">
-                                <div
-                                    class="w-12 h-12 bg-purple-600/20 rounded-2xl flex items-center justify-center text-purple-400 transition-colors group-hover:bg-purple-600 group-hover:text-white">
-                                    <i class="fas fa-rocket text-xl"></i>
-                                </div>
-                                <span
-                                    class="px-3 py-1 bg-blue-500/20 text-blue-400 text-[10px] font-bold uppercase rounded-full">Top
-                                    Tier</span>
-                            </div>
-                            <h3 class="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Subject Mastered
-                            </h3>
-                            <div class="flex items-baseline gap-2">
-                                <span class="text-4xl font-extrabold text-white">4</span>
-                                <span class="text-slate-500 text-xs font-medium uppercase tracking-tighter">Hubs</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Main Dashboard Content -->
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        <!-- Left: Retention Graph -->
-                        <div class="glass p-8 rounded-[2.5rem] border border-white/5 space-y-6">
-                            <div class="flex items-center justify-between">
-                                <h4 class="text-lg font-bold text-white">Cognitive Trend <span
-                                        class="text-xs font-light text-slate-500 ml-2">7-Day Projection</span></h4>
-                                <div class="flex gap-2">
-                                    <button
-                                        class="px-3 py-1.5 bg-white/5 rounded-lg text-[10px] font-bold uppercase tracking-widest text-[#94a3b8]">Review
-                                        Log</button>
-                                </div>
-                            </div>
-                            <div class="h-64 flex items-center justify-center relative">
-                                <canvas id="retentionChart" class="w-full h-full"></canvas>
-                            </div>
-                        </div>
-
-                        <!-- Right: Focus Areas -->
-                        <div class="glass p-8 rounded-[2.5rem] border border-white/5 space-y-6">
-                            <h4 class="text-lg font-bold text-white">Focus Priority <span
-                                    class="text-xs font-light text-slate-500 ml-2">Algorithm-assigned</span></h4>
-                            <div class="space-y-4" id="priority-list">
-                                <!-- Simulated Priorities -->
-                                <div
-                                    class="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-2 h-2 rounded-full bg-red-500"></div>
-                                        <span class="text-sm font-medium">Quantum Tunnelling</span>
+                                <div id="chat-view" class="view h-[calc(100vh-80px)] overflow-hidden">
+                                    <div
+                                        class="h-full flex flex-col items-center justify-center p-12 text-center bg-gradient-to-b from-[#020617] to-[#0f172a]">
+                                        <div
+                                            class="w-32 h-32 bg-blue-600/10 rounded-full flex items-center justify-center mb-8 relative">
+                                            <div
+                                                class="absolute inset-0 bg-blue-500/20 rounded-full animate-ping opacity-20">
+                                            </div>
+                                            <i class="fas fa-sparkles text-5xl text-blue-500"></i>
+                                        </div>
+                                        <h2 class="text-3xl font-black text-white mb-4 tracking-tight">AI Study Mate
+                                        </h2>
+                                        <p class="text-slate-500 max-w-md mx-auto leading-relaxed font-medium">
+                                            The neural link is being established. Your personal AI tutor will be
+                                            available shortly
+                                            to help you navigate complex concepts.
+                                        </p>
+                                        <div class="mt-10 flex gap-4">
+                                            <div
+                                                class="px-6 py-3 rounded-2xl bg-white/[0.03] border border-white/5 text-xs font-bold text-slate-400 uppercase tracking-widest">
+                                                Context Aware
+                                            </div>
+                                            <div
+                                                class="px-6 py-3 rounded-2xl bg-white/[0.03] border border-white/5 text-xs font-bold text-slate-400 uppercase tracking-widest">
+                                                Deep Reasoning
+                                            </div>
+                                        </div>
                                     </div>
-                                    <span class="text-xs text-red-400 font-bold">24% Retention</span>
                                 </div>
-                                <div
-                                    class="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-2 h-2 rounded-full bg-red-500"></div>
-                                        <span class="text-sm font-medium">Bose-Einstein Condensate</span>
-                                    </div>
-                                    <span
-                                        class="text-xs text-red-500 font-extrabold uppercase animate-pulse">Critical</span>
-                                </div>
-                                <div
-                                    class="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
-                                        <span class="text-sm font-medium">Semiconductor Physics</span>
-                                    </div>
-                                    <span class="text-xs text-yellow-400 font-bold">56% Decay</span>
-                                </div>
-                            </div>
-                            <button onclick="showView('mindmap-view')"
-                                class="w-full py-4 bg-slate-800 hover:bg-slate-700 text-white text-sm font-bold rounded-2xl transition-all border border-white/5">Start
-                                Focused Revision Session</button>
-                        </div>
-                    </div>
-                </div>
-            </section>
-            <!-- Flash Cards View -->
-            <section id="flashcards-view" class="view hidden flex flex-col h-[calc(100vh-64px)] overflow-hidden">
-                <!-- Setup Screen -->
-                <div id="flashcards-setup"
-                    class="flex-1 flex flex-col items-center justify-center p-8 bg-gradient-to-b from-[#020617] to-[#0f172a]">
-                    <div
-                        class="max-w-2xl w-full glass p-10 rounded-[2.5rem] shadow-2xl border-white/5 space-y-8 animate-in fade-in zoom-in duration-500">
-                        <div class="text-center space-y-3">
-                            <div
-                                class="w-20 h-20 bg-orange-600 rounded-3xl flex items-center justify-center text-3xl mx-auto shadow-2xl shadow-orange-500/20 mb-6">
-                                <i class="fas fa-clone"></i>
-                            </div>
-                            <h2 class="text-4xl font-extrabold tracking-tight">Active Recall Hub</h2>
-                            <p class="text-slate-400 font-light text-sm">Master your subjects with AI-optimized
-                                flashcards and spaced repetition.</p>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div class="space-y-2">
-                                <label
-                                    class="text-[10px] uppercase tracking-widest text-slate-500 font-bold ml-1">Select
-                                    Subject</label>
-                                <div class="relative">
-                                    <select id="flash-subject-select" onchange="updateFlashTopicDropdown()"
-                                        class="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white appearance-none focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all cursor-pointer text-sm">
-                                        <option value="" disabled selected>Select Subject</option>
-                                    </select>
-                                    <i
-                                        class="fas fa-chevron-down absolute right-6 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"></i>
-                                </div>
-                            </div>
-                            <div class="space-y-2">
-                                <label
-                                    class="text-[10px] uppercase tracking-widest text-slate-500 font-bold ml-1">Select
-                                    Topic</label>
-                                <div class="relative">
-                                    <select id="flash-topic-select" onchange="updateFlashSectionDropdown()"
-                                        class="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white appearance-none focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all cursor-pointer text-sm">
-                                        <option value="" disabled selected>Select subject first</option>
-                                    </select>
-                                    <i
-                                        class="fas fa-chevron-down absolute right-6 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"></i>
-                                </div>
-                            </div>
-                            <div class="space-y-2">
-                                <label
-                                    class="text-[10px] uppercase tracking-widest text-slate-500 font-bold ml-1">Select
-                                    Section</label>
-                                <div class="relative">
-                                    <select id="flash-section-select"
-                                        class="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white appearance-none focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all cursor-pointer text-sm">
-                                        <option value="" disabled selected>Select topic first</option>
-                                    </select>
-                                    <i
-                                        class="fas fa-chevron-down absolute right-6 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"></i>
-                                </div>
-                            </div>
-                        </div>
-                        <button onclick="generateFlashCardsAction()"
-                            class="w-full py-5 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-2xl shadow-xl shadow-orange-600/20 transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3">
-                            <i class="fas fa-play"></i> Start Flash Card Session
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Loading Screen -->
-                <div id="flashcards-loading"
-                    class="hidden flex-1 flex flex-col items-center justify-center p-8 bg-[#020617]">
-                    <div class="text-center space-y-8 animate-pulse">
-                        <div class="relative">
-                            <div
-                                class="w-24 h-24 border-4 border-orange-500/20 border-t-orange-500 rounded-full animate-spin mx-auto">
-                            </div>
-                            <i
-                                class="fas fa-sparkles text-2xl text-orange-500 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></i>
-                        </div>
-                        <div class="space-y-3">
-                            <h3 class="text-2xl font-bold text-white">Synthesizing Memory Points...</h3>
-                            <div id="flash-loading-messages" class="h-6 text-slate-400 font-light text-sm italic">
-                                Generating Flash Cards...</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Content Screen -->
-                <div id="flashcards-content" class="hidden flex-1 flex flex-col overflow-hidden">
-                    <div class="px-8 py-4 flex items-center justify-between border-b border-white/5 glass">
-                        <div class="flex items-center gap-4">
-                            <button onclick="resetFlashSetup()"
-                                class="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400"><i
-                                    class="fas fa-arrow-left"></i></button>
-                            <div>
-                                <h1 class="text-xl font-bold text-white" id="flash-current-topic">Chemistry</h1>
-                                <p class="text-[10px] text-slate-500 uppercase tracking-widest"
-                                    id="flash-current-subject">Water Characteristics</p>
-                            </div>
-                        </div>
-                        <div class="flex flex-col items-end">
-                            <span class="text-xs font-bold text-orange-500 uppercase tracking-widest"
-                                id="flash-section-title">Section Title</span>
-                            <span class="text-[10px] text-slate-500" id="flash-card-progress">Card 1 / 10</span>
-                        </div>
-                    </div>
-
-                    <div class="flex-1 flex flex-col items-center justify-center p-6 relative overflow-hidden">
-                        <!-- Progress Bar Backdrop -->
-                        <div class="absolute top-0 left-0 w-full h-1 bg-white/5">
-                            <div id="flash-progress-bar" class="h-full bg-orange-500 transition-all duration-300"
-                                style="width: 0%"></div>
-                        </div>
-
-                        <!-- Card Display Area -->
-                        <div class="w-full max-w-xl aspect-[4/3] relative flex items-center justify-center"
-                            id="flashcard-main-container">
-                            <!-- Single Card will be injected here -->
-                        </div>
-
-                        <!-- Controls -->
-                        <div class="flex items-center gap-8 mt-12">
-                            <button onclick="prevFlashCard()" id="prev-card-btn"
-                                class="w-14 h-14 rounded-full glass border-white/10 flex items-center justify-center text-xl text-slate-400 hover:text-white hover:bg-white/10 transition-all active:scale-90">
-                                <i class="fas fa-chevron-left"></i>
-                            </button>
-
-                            <button onclick="flipCurrentCard()"
-                                class="px-10 py-5 bg-orange-600 hover:bg-orange-500 text-white font-extrabold rounded-2xl shadow-xl shadow-orange-600/20 transition-all transform hover:scale-[1.05] active:scale-95 flex items-center gap-3">
-                                <i class="fas fa-sync-alt"></i>
-                                <span>Flip Card</span>
-                            </button>
-
-                            <button onclick="nextFlashCard()" id="next-card-btn"
-                                class="w-14 h-14 rounded-full glass border-white/10 flex items-center justify-center text-xl text-slate-400 hover:text-white hover:bg-white/10 transition-all active:scale-90">
-                                <i class="fas fa-chevron-right"></i>
-                            </button>
-                        </div>
-
-                        <div class="mt-8 flex gap-4">
-                            <div
-                                class="flex items-center gap-2 text-[10px] text-slate-500 uppercase tracking-widest font-bold">
-                                <span class="px-2 py-0.5 rounded bg-white/5 border border-white/10">Space</span> Flip
-                            </div>
-                            <div
-                                class="flex items-center gap-2 text-[10px] text-slate-500 uppercase tracking-widest font-bold">
-                                <span class="px-2 py-0.5 rounded bg-white/5 border border-white/10">← / →</span>
-                                Navigate
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <section id="chat-view" class="view hidden p-12 text-center opacity-50">
-                <i class="fas fa-robot text-6xl mb-4"></i>
-                <h2 class="text-2xl">AI Assistant</h2>
-                <p>Returning in the next update.</p>
-            </section>
-        </main>
+            </main>
     </div>
 
     <!-- Modals -->

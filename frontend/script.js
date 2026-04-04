@@ -71,30 +71,25 @@ function updateUserProfile() {
 
 // View Logic Fix
 function showView(viewId) {
-    document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
 
-    // Fix for style tags in Sidebar
-    document.querySelectorAll('nav a').forEach(a => {
-        a.classList.remove('bg-blue-600/20', 'text-blue-400', 'border-blue-500/30');
-        a.classList.add('hover:bg-white/5', 'text-slate-400');
+    // Reset Sidebar Links
+    document.querySelectorAll('.sidebar-item').forEach(item => {
+        item.classList.remove('active', 'active-orange');
     });
 
     const target = document.getElementById(viewId);
     if (target) {
-        target.classList.remove('hidden');
         target.classList.add('active');
 
         // Update Sidebar Active State
         const sidebarLink = document.querySelector(`a[onclick="showView('${viewId}')"]`);
         if (sidebarLink) {
-            // Check if it's flashcards to use orange
             if (viewId === 'flashcards-view') {
-                sidebarLink.classList.add('bg-orange-600/20', 'text-orange-400', 'border-orange-500/30');
+                sidebarLink.classList.add('active-orange');
             } else {
-                sidebarLink.classList.add('bg-blue-600/20', 'text-blue-400', 'border-blue-500/30');
+                sidebarLink.classList.add('active');
             }
-            sidebarLink.classList.remove('hover:bg-white/5', 'text-slate-400');
         }
 
         if (viewId === 'mindmap-view' && !activeSubject) {
@@ -105,7 +100,7 @@ function showView(viewId) {
             initFlashKeyboardControls();
         }
         if (viewId === 'dashboard-view') {
-            initDashboard();
+            setTimeout(initDashboard, 100);
         }
     }
 }
@@ -129,20 +124,41 @@ function initDashboard() {
                 backgroundColor: 'rgba(59, 130, 246, 0.1)',
                 fill: true,
                 tension: 0.4,
-                borderWidth: 3,
-                pointRadius: 4,
-                pointBackgroundColor: '#3b82f6'
+                borderWidth: 4,
+                pointRadius: 6,
+                pointBackgroundColor: '#3b82f6',
+                pointBorderColor: '#020617',
+                pointBorderWidth: 2
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#1e293b',
+                    titleFont: { family: 'Outfit', size: 12 },
+                    bodyFont: { family: 'Outfit', size: 14 },
+                    padding: 12,
+                    displayColors: false,
+                    callbacks: {
+                        label: function (context) { return context.parsed.y + '% Retention'; }
+                    }
+                }
+            },
             scales: {
-                y: { display: false, min: 0, max: 100 },
+                y: {
+                    display: false,
+                    min: 0,
+                    max: 100
+                },
                 x: {
                     grid: { display: false },
-                    ticks: { color: '#64748b', font: { size: 10, weight: 'bold' } }
+                    ticks: {
+                        color: '#64748b',
+                        font: { family: 'Outfit', size: 10, weight: 'bold' }
+                    }
                 }
             }
         }
