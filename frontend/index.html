@@ -202,9 +202,11 @@
 
         /* Flashcard Styles */
         .flashcard-container {
-            perspective: 1000px;
+            perspective: 2000px;
             cursor: pointer;
-            height: 200px;
+            width: 100%;
+            height: 100%;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .flashcard-inner {
@@ -212,7 +214,7 @@
             width: 100%;
             height: 100%;
             text-align: center;
-            transition: transform 0.6s;
+            transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
             transform-style: preserve-3d;
         }
 
@@ -230,25 +232,43 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 24px;
-            border-radius: 20px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            border-radius: 2.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .flashcard-front {
-            background: rgba(30, 41, 59, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: linear-gradient(145deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9));
             color: #f1f5f9;
         }
 
         .flashcard-back {
-            background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
             color: white;
             transform: rotateY(180deg);
+            box-shadow: 0 20px 40px -10px rgba(234, 88, 12, 0.3);
+        }
+
+        .flashcard-container.active {
+            filter: drop-shadow(0 0 20px rgba(249, 115, 22, 0.1));
         }
 
         .ai-pulse-brain {
             animation: pulse-soft 2s infinite ease-in-out;
+        }
+
+        /* Slide animations */
+        .translate-x-full {
+            transform: translateX(100%);
+        }
+
+        .-translate-x-full {
+            transform: translateX(-100%);
+        }
+
+        .opacity-0 {
+            opacity: 0;
         }
     </style>
 </head>
@@ -749,14 +769,14 @@
                             <p class="text-slate-400 font-light text-sm">Master your subjects with AI-optimized
                                 flashcards and spaced repetition.</p>
                         </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div class="space-y-2">
                                 <label
                                     class="text-[10px] uppercase tracking-widest text-slate-500 font-bold ml-1">Select
                                     Subject</label>
                                 <div class="relative">
                                     <select id="flash-subject-select" onchange="updateFlashTopicDropdown()"
-                                        class="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white appearance-none focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all cursor-pointer">
+                                        class="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white appearance-none focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all cursor-pointer text-sm">
                                         <option value="" disabled selected>Select Subject</option>
                                     </select>
                                     <i
@@ -768,9 +788,22 @@
                                     class="text-[10px] uppercase tracking-widest text-slate-500 font-bold ml-1">Select
                                     Topic</label>
                                 <div class="relative">
-                                    <select id="flash-topic-select"
-                                        class="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white appearance-none focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all cursor-pointer">
+                                    <select id="flash-topic-select" onchange="updateFlashSectionDropdown()"
+                                        class="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white appearance-none focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all cursor-pointer text-sm">
                                         <option value="" disabled selected>Select subject first</option>
+                                    </select>
+                                    <i
+                                        class="fas fa-chevron-down absolute right-6 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"></i>
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <label
+                                    class="text-[10px] uppercase tracking-widest text-slate-500 font-bold ml-1">Select
+                                    Section</label>
+                                <div class="relative">
+                                    <select id="flash-section-select"
+                                        class="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white appearance-none focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all cursor-pointer text-sm">
+                                        <option value="" disabled selected>Select topic first</option>
                                     </select>
                                     <i
                                         class="fas fa-chevron-down absolute right-6 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"></i>
@@ -779,7 +812,7 @@
                         </div>
                         <button onclick="generateFlashCardsAction()"
                             class="w-full py-5 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-2xl shadow-xl shadow-orange-600/20 transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3">
-                            <i class="fas fa-bolt"></i> Generate Flash Cards
+                            <i class="fas fa-play"></i> Start Flash Card Session
                         </button>
                     </div>
                 </div>
@@ -816,12 +849,56 @@
                                     id="flash-current-subject">Water Characteristics</p>
                             </div>
                         </div>
-                        <div class="flex items-center gap-3">
-                            <span class="text-xs text-slate-400" id="flash-stats">0 Cards in 0 Sections</span>
+                        <div class="flex flex-col items-end">
+                            <span class="text-xs font-bold text-orange-500 uppercase tracking-widest"
+                                id="flash-section-title">Section Title</span>
+                            <span class="text-[10px] text-slate-500" id="flash-card-progress">Card 1 / 10</span>
                         </div>
                     </div>
-                    <div class="flex-1 overflow-y-auto p-8 space-y-10 scroll-smooth" id="flashcard-sections-container">
-                        <!-- Sections will be injected here -->
+
+                    <div class="flex-1 flex flex-col items-center justify-center p-6 relative overflow-hidden">
+                        <!-- Progress Bar Backdrop -->
+                        <div class="absolute top-0 left-0 w-full h-1 bg-white/5">
+                            <div id="flash-progress-bar" class="h-full bg-orange-500 transition-all duration-300"
+                                style="width: 0%"></div>
+                        </div>
+
+                        <!-- Card Display Area -->
+                        <div class="w-full max-w-xl aspect-[4/3] relative flex items-center justify-center"
+                            id="flashcard-main-container">
+                            <!-- Single Card will be injected here -->
+                        </div>
+
+                        <!-- Controls -->
+                        <div class="flex items-center gap-8 mt-12">
+                            <button onclick="prevFlashCard()" id="prev-card-btn"
+                                class="w-14 h-14 rounded-full glass border-white/10 flex items-center justify-center text-xl text-slate-400 hover:text-white hover:bg-white/10 transition-all active:scale-90">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+
+                            <button onclick="flipCurrentCard()"
+                                class="px-10 py-5 bg-orange-600 hover:bg-orange-500 text-white font-extrabold rounded-2xl shadow-xl shadow-orange-600/20 transition-all transform hover:scale-[1.05] active:scale-95 flex items-center gap-3">
+                                <i class="fas fa-sync-alt"></i>
+                                <span>Flip Card</span>
+                            </button>
+
+                            <button onclick="nextFlashCard()" id="next-card-btn"
+                                class="w-14 h-14 rounded-full glass border-white/10 flex items-center justify-center text-xl text-slate-400 hover:text-white hover:bg-white/10 transition-all active:scale-90">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+
+                        <div class="mt-8 flex gap-4">
+                            <div
+                                class="flex items-center gap-2 text-[10px] text-slate-500 uppercase tracking-widest font-bold">
+                                <span class="px-2 py-0.5 rounded bg-white/5 border border-white/10">Space</span> Flip
+                            </div>
+                            <div
+                                class="flex items-center gap-2 text-[10px] text-slate-500 uppercase tracking-widest font-bold">
+                                <span class="px-2 py-0.5 rounded bg-white/5 border border-white/10">← / →</span>
+                                Navigate
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
