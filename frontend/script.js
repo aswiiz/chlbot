@@ -804,3 +804,118 @@ function logout() {
         window.location.reload();
     }
 }
+
+/* --- Study Chat Assistant --- */
+
+async function sendChatMessage() {
+    const input = document.getElementById('chat-input');
+    const msg = input.value.trim();
+    if (!msg) return;
+
+    // Clear input
+    input.value = '';
+
+    // Append User Message
+    appendChatMessage('user', msg);
+
+    // Append Typing Animation
+    const typingId = 'typing-' + Date.now();
+    appendTypingIndicator(typingId);
+
+    try {
+        const res = await fetch(`${API_URL}/ai/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: msg })
+        });
+
+        const data = await res.json();
+
+        // Remove Typing Indicator
+        const indicator = document.getElementById(typingId);
+        if (indicator) indicator.remove();
+
+        if (data.reply) {
+            appendChatMessage('bot', data.reply);
+        } else {
+            appendChatMessage('bot', "I'm having trouble connecting to the neural link. Please try again.");
+        }
+    } catch (err) {
+        const indicator = document.getElementById(typingId);
+        if (indicator) indicator.remove();
+        appendChatMessage('bot', "Connection error. Ensure the CLH backend is active.");
+    }
+}
+
+function appendChatMessage(role, text) {
+    const container = document.getElementById('chat-messages');
+    if (!container) return;
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    const msgDiv = document.createElement('div');
+    msgDiv.className = `flex gap-4 ${role === 'user' ? 'flex-row-reverse' : ''} animate-in slide-in-from-bottom-2 duration-300`;
+
+    const icon = role === 'user'
+        ? `<div class="w-10 h-10 rounded-xl bg-indigo-600/10 flex items-center justify-center text-indigo-400 shrink-0 border border-indigo-500/20"><i class="fas fa-user text-xs"></i></div>`
+        : `<div class="w-10 h-10 rounded-xl bg-blue-600/10 flex items-center justify-center text-blue-400 shrink-0 border border-blue-500/20"><i class="fas fa-robot text-xs"></i></div>`;
+
+    // Process bullet points and newlines - Simple Markdown-ish parsing
+    let formattedText = text.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>');
+    if (formattedText.includes('- ')) {
+        formattedText = formattedText.split('<br>').map(line => {
+            if (line.trim().startsWith('- ')) {
+                return `<div class="flex gap-2 ml-2 mb-1"><span class="text-blue-500">•</span><span>${line.trim().substring(2)}</span></div>`;
+            }
+            return line;
+        }).join('<br>');
+    }
+
+    // Bold text support
+    formattedText = formattedText.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-bold">$1</strong>');
+
+    msgDiv.innerHTML = `
+        ${icon}
+        <div class="space-y-2 max-w-xl ${role === 'user' ? 'text-right' : ''}">
+            <div class="${role === 'user' ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-white/5 border border-white/10 text-slate-300 rounded-tl-none'} p-5 rounded-2xl text-sm leading-relaxed shadow-xl">
+                ${formattedText}
+            </div>
+            <p class="text-[10px] text-slate-500 font-bold ${role === 'user' ? 'mr-2' : 'ml-2'}">${role.toUpperCase()} • ${time}</p>
+        </div>
+    `;
+
+    container.appendChild(msgDiv);
+    container.scrollTop = container.scrollHeight;
+}
+
+function appendTypingIndicator(id) {
+    const container = document.getElementById('chat-messages');
+    if (!container) return;
+    const div = document.createElement('div');
+    div.id = id;
+    div.className = "flex gap-4 animate-in fade-in duration-300";
+    div.innerHTML = `
+        <div class="w-10 h-10 rounded-xl bg-blue-600/10 flex items-center justify-center text-blue-400 shrink-0 border border-blue-500/20">
+            <i class="fas fa-robot text-xs"></i>
+        </div>
+        <div class="space-y-2">
+            <div class="bg-white/5 border border-white/10 p-5 rounded-2xl rounded-tl-none flex items-center gap-2">
+                <span class="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce"></span>
+                <span class="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                <span class="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+            </div>
+        </div>
+    `;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+}
+
+function quickAsk(query) {
+    const input = document.getElementById('chat-input');
+    if (input) input.value = query;
+    sendChatMessage();
+}
+
+function askAIAboutNode(topic) {
+    if (typeof showView === 'function') showView('chat-view');
+    quickAsk(`Explain ${topic} from my study materials.`);
+}

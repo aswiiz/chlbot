@@ -377,7 +377,7 @@
                     class="sidebar-item flex items-center gap-4 px-6 py-4 rounded-2xl transition-all text-slate-400 hover:text-white group"
                     id="nav-chat">
                     <i class="fas fa-sparkles text-lg group-hover:bounce transition-transform"></i>
-                    <span class="font-semibold text-sm">AI Study Mate</span>
+                    <span class="font-semibold text-sm">Study Chat</span>
                 </a>
 
                 <div class="pt-10 pb-4 px-6">
@@ -790,6 +790,12 @@
                                                     Photodiode
                                                 </h2>
                                             </div>
+                                            <button
+                                                onclick="askAIAboutNode(document.getElementById('note-title').innerText)"
+                                                class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-blue-600/20 flex items-center gap-2 shrink-0">
+                                                <i class="fas fa-sparkles text-[10px]"></i>
+                                                <span>Ask Assistant</span>
+                                            </button>
                                         </div>
                                     </div>
                                     <div class="flex-1 overflow-y-auto p-8 space-y-8 scroll-smooth">
@@ -995,32 +1001,77 @@
                                     </div>
                                 </div>
 
-                                <div id="chat-view" class="view h-[calc(100vh-80px)] overflow-hidden">
+                                <!-- Study Assistant Chatbot -->
+                                <div id="chat-view"
+                                    class="view h-[calc(100vh-80px)] flex flex-col overflow-hidden bg-slate-950/20 backdrop-blur-md">
+                                    <!-- Chat Header -->
                                     <div
-                                        class="h-full flex flex-col items-center justify-center p-12 text-center bg-gradient-to-b from-[#020617] to-[#0f172a]">
-                                        <div
-                                            class="w-32 h-32 bg-blue-600/10 rounded-full flex items-center justify-center mb-8 relative">
+                                        class="px-10 py-6 border-b border-white/5 flex items-center justify-between glass">
+                                        <div class="flex items-center gap-5">
                                             <div
-                                                class="absolute inset-0 bg-blue-500/20 rounded-full animate-ping opacity-20">
+                                                class="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-xl shadow-lg shadow-blue-600/20">
+                                                <i class="fas fa-sparkles text-white"></i>
                                             </div>
-                                            <i class="fas fa-sparkles text-5xl text-blue-500"></i>
+                                            <div>
+                                                <h2 class="text-xl font-bold text-white tracking-tight">Study Assistant
+                                                </h2>
+                                                <p
+                                                    class="text-[10px] text-green-500 font-bold uppercase tracking-widest flex items-center gap-2">
+                                                    <span
+                                                        class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+                                                    Context Grounded
+                                                </p>
+                                            </div>
                                         </div>
-                                        <h2 class="text-3xl font-black text-white mb-4 tracking-tight">AI Study Mate
-                                        </h2>
-                                        <p class="text-slate-500 max-w-md mx-auto leading-relaxed font-medium">
-                                            The neural link is being established. Your personal AI tutor will be
-                                            available shortly
-                                            to help you navigate complex concepts.
-                                        </p>
-                                        <div class="mt-10 flex gap-4">
+                                    </div>
+
+                                    <!-- Chat Messages Area -->
+                                    <div id="chat-messages" class="flex-1 overflow-y-auto p-10 space-y-8 scroll-smooth">
+                                        <!-- Bot Welcome Message -->
+                                        <div class="flex gap-4 max-w-2xl">
                                             <div
-                                                class="px-6 py-3 rounded-2xl bg-white/[0.03] border border-white/5 text-xs font-bold text-slate-400 uppercase tracking-widest">
-                                                Context Aware
+                                                class="w-10 h-10 rounded-xl bg-blue-600/10 flex items-center justify-center text-blue-400 shrink-0 border border-blue-500/20">
+                                                <i class="fas fa-robot"></i>
                                             </div>
-                                            <div
-                                                class="px-6 py-3 rounded-2xl bg-white/[0.03] border border-white/5 text-xs font-bold text-slate-400 uppercase tracking-widest">
-                                                Deep Reasoning
+                                            <div class="space-y-2">
+                                                <div
+                                                    class="bg-white/5 border border-white/10 p-5 rounded-2xl rounded-tl-none text-slate-300 text-sm leading-relaxed shadow-xl">
+                                                    Hello! I'm your **CLH Study Assistant**. I've indexed your Mind
+                                                    Maps, Flash Cards, and Notes.
+                                                    <br><br>
+                                                    Ask me anything about your study materials! I'll provide concise,
+                                                    bulleted explanations to help you prepare for exams.
+                                                </div>
+                                                <p class="text-[10px] text-slate-500 font-bold ml-2">SYSTEM BOT • JUST
+                                                    NOW</p>
                                             </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Chat Input Area -->
+                                    <div class="p-8 glass border-t border-white/5">
+                                        <div class="max-w-4xl mx-auto relative">
+                                            <input type="text" id="chat-input"
+                                                placeholder="Ask about Photonics, Water Characteristics, or any topic..."
+                                                class="w-full bg-white/[0.04] border border-white/10 rounded-3xl py-6 pl-8 pr-20 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all font-medium text-sm shadow-inner"
+                                                onkeydown="if(event.key === 'Enter') sendChatMessage()">
+                                            <button onclick="sendChatMessage()"
+                                                class="absolute right-3 top-3 w-12 h-12 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl flex items-center justify-center transition-all shadow-lg shadow-blue-600/20 group">
+                                                <i
+                                                    class="fas fa-paper-plane group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"></i>
+                                            </button>
+                                        </div>
+                                        <div
+                                            class="max-w-4xl mx-auto flex gap-3 mt-4 overflow-x-auto pb-2 scrollbar-hide">
+                                            <button onclick="quickAsk('Give me short notes on solar cell')"
+                                                class="text-[10px] whitespace-nowrap bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 rounded-full text-slate-400 hover:text-white transition-all font-bold">Short
+                                                Notes: Solar Cell</button>
+                                            <button onclick="quickAsk('Explain temporary hardness of water')"
+                                                class="text-[10px] whitespace-nowrap bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 rounded-full text-slate-400 hover:text-white transition-all font-bold">Water
+                                                Hardness</button>
+                                            <button onclick="quickAsk('Explain principles of Photonics')"
+                                                class="text-[10px] whitespace-nowrap bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 rounded-full text-slate-400 hover:text-white transition-all font-bold">Photonics
+                                                Principles</button>
                                         </div>
                                     </div>
                                 </div>

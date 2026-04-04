@@ -346,18 +346,69 @@ async def generate_topic_info(topic: str, subject: str = ""):
 @app.post("/api/ai/chat")
 async def ai_chat(req: ChatRequest):
     try:
-        if not client_openai:
-            return {"reply": "Sorry, AI Assistant is currently offline (API Key missing)."}
-        response = client_openai.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": f"You are CLH AI Assistant. Help the student with topic explanation, revision strategies, and generating study resources. Current Subject: {req.subject}. Current Topic: {req.topic}."},
-                {"role": "user", "content": req.message}
-            ]
-        )
-        return {"reply": response.choices[0].message.content}
+        # 1. Retrieval: Fetch relevant context from subjects
+        # For simplicity in this RAG Implementation, we'll search across all study materials
+        # in the database and extract relevant notes and hierarchy.
+        all_subjects = await subjects_collection.find().to_list(100)
+        
+        context_parts = []
+        for s in all_subjects:
+            subject_name = s.get("name", "")
+            for t in s.get("topics", []):
+                # Flatten the hierarchy to find relevant matches
+                def extract_content(node, path):
+                    current_path = f"{path} > {node.get('title', '')}"
+                    if node.get("note"):
+                        context_parts.append(f"[{current_path}]: {node.get('note')}")
+                    for child in node.get("children", []):
+                        extract_content(child, current_path)
+                
+                extract_content(t, subject_name)
+        
+        context_text = "\n\n".join(context_parts)
+        
+        # 2. Augmented Generation
+        sys_prompt = f"""You are the CLH Study Assistant. Your ONLY source of truth is the provided Study Materials below. 
+        - Answer based ONLY on the study materials. 
+        - If the information is NOT in the materials, politely say you don't have that information.
+        - Give short, professional explanations.
+        - Use bullet points for steps or lists.
+        - Explain concepts clearly as if for an exam.
+        - Don't use general internet knowledge.
+        
+        STUDY MATERIALS:
+        {context_text[:4000]} # Limit context to avoid token overflow
+        """
+        
+        messages = [
+            {"role": "system", "content": sys_prompt},
+            {"role": "user", "content": req.message}
+        ]
+        
+        # Prioritize SambaNova for better reasoning
+        if SAMBANOVA_API_KEY:
+            client_chat = openai.OpenAI(api_key=SAMBANOVA_API_KEY, base_url="https://api.sambanova.ai/v1")
+            response = client_chat.chat.completions.create(
+                model="DeepSeek-R1",
+                messages=messages
+            )
+            reply = response.choices[0].message.content
+            # Filter out thinking blocks
+            import re
+            reply = re.sub(r'<think>.*?</think>', '', reply, flags=re.DOTALL).strip()
+        elif client_openai:
+            response = client_openai.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=messages
+            )
+            reply = response.choices[0].message.content
+        else:
+            return {"reply": "AI service offline. Please check API keys."}
+            
+        return {"reply": reply}
     except Exception as e:
-        return {"reply": f"Sorry, AI Assistant is currently offline. Error: {str(e)}"}
+        print(f"Chat Error: {str(e)}")
+        return {"reply": f"Internal Error: {str(e)}"}
 
 @app.get("/api/health")
 async def health_check():
