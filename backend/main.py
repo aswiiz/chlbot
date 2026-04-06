@@ -359,7 +359,17 @@ async def ai_chat(req: ChatRequest):
                 def extract_content(node, path):
                     current_path = f"{path} > {node.get('title', '')}"
                     if node.get("note"):
-                        context_parts.append(f"[{current_path}]: {node.get('note')}")
+                        context_parts.append(f"[{current_path} - Note]: {node.get('note')}")
+                    
+                    # Extract Flashcards for this specific node
+                    if node.get("flashcards"):
+                        fc_text = ""
+                        for section in node.get("flashcards"):
+                            for card in section.get("cards", []):
+                                fc_text += f"\nQ: {card.get('question')} | A: {card.get('answer')}"
+                        if fc_text:
+                            context_parts.append(f"[{current_path} - Flashcards]: {fc_text}")
+
                     for child in node.get("children", []):
                         extract_content(child, current_path)
                 

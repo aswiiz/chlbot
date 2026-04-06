@@ -9,6 +9,7 @@ class Topic(BaseModel):
     last_reviewed: datetime = Field(default_factory=datetime.utcnow)
     decay_status: str = "Strong"
     children: List['Topic'] = []
+    flashcards: List[dict] = []  # Added to match seed data structure
 
 # For Pydantic V2 compatibility
 if hasattr(Topic, "model_rebuild"):
@@ -33,8 +34,8 @@ class MindMapResponse(BaseModel):
     mermaid_code: str
 
 class Flashcard(BaseModel):
-    front: str
-    back: str
+    question: str
+    answer: str
 
 class FlashcardsResponse(BaseModel):
     flashcards: List[Flashcard]

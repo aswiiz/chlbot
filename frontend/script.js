@@ -107,6 +107,31 @@ function showView(viewId) {
 
 // Stats & Charts
 function initDashboard() {
+    // Update Stat Cards with real counts
+    const totalSubjects = subjects.length;
+    let totalTopics = 0;
+    let totalFlashcards = 0;
+
+    subjects.forEach(s => {
+        if (s.topics) {
+            totalTopics += s.topics.length;
+            s.topics.forEach(t => {
+                if (t.flashcards) {
+                    t.flashcards.forEach(section => {
+                        if (section.cards) totalFlashcards += section.cards.length;
+                    });
+                }
+            });
+        }
+    });
+
+    // Update the Stat Cards in the UI
+    const flashStat = document.querySelector('.premium-card:nth-child(2) .text-4xl');
+    if (flashStat) flashStat.innerText = totalFlashcards.toLocaleString();
+
+    const nodeStat = document.querySelector('.premium-card:nth-child(3) .text-4xl');
+    if (nodeStat) nodeStat.innerText = totalTopics < 10 ? `0${totalTopics}` : totalTopics;
+
     const ctx = document.getElementById('retentionChart');
     if (!ctx) return;
 
@@ -640,7 +665,28 @@ function renderCurrentFlashCard(direction = 'next') {
         if (cardEl) cardEl.classList.remove('translate-x-full', '-translate-x-full', 'opacity-0');
     }, 50);
 
+    // Add Ask AI helper
+    const cardEl = document.getElementById('active-flashcard');
+    if (cardEl) {
+        const btnBox = document.createElement('div');
+        btnBox.className = "absolute -bottom-8 left-1/2 -translate-x-1/2 flex gap-4";
+        btnBox.innerHTML = `
+            <button onclick="askAIAboutCard()" class="px-4 py-2 bg-blue-600/10 hover:bg-blue-600 text-blue-400 hover:text-white rounded-xl text-[10px] font-bold transition-all border border-blue-500/20 shadow-lg flex items-center gap-2">
+                <i class="fas fa-sparkles"></i> Ask Assistant
+            </button>
+        `;
+        container.appendChild(btnBox);
+    }
+
     initSwipeEvents();
+}
+
+function askAIAboutCard() {
+    const card = activeSectionCards[currentFlashCardIndex];
+    if (!card) return;
+
+    showView('chat-view');
+    quickAsk(`Explain this flashcard concept: "${card.question}" (Answer provided: ${card.answer})`);
 }
 
 function nextFlashCard() {
