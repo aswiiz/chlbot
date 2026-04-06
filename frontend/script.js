@@ -965,3 +965,30 @@ function askAIAboutNode(topic) {
     if (typeof showView === 'function') showView('chat-view');
     quickAsk(`Explain ${topic} from my study materials.`);
 }
+
+function expandAll() {
+    if (!activeMindMapRoot) return;
+
+    function recursivelyExpand(node, id) {
+        if (!node.children || node.children.length === 0) return;
+        expandedNodes.add(id);
+        node.children.forEach((child, idx) => {
+            recursivelyExpand(child, `${id}-${idx}`);
+        });
+    }
+
+    if (activeMindMapRoot.children) {
+        activeMindMapRoot.children.forEach((child, idx) => {
+            recursivelyExpand(child, `gen-root-${idx}`);
+        });
+    } else {
+        recursivelyExpand(activeMindMapRoot, 'gen-root');
+    }
+
+    displayGeneratedMap(activeSubject ? activeSubject.name : '', activeMindMapRoot);
+}
+
+function collapseAll() {
+    expandedNodes.clear();
+    displayGeneratedMap(activeSubject ? activeSubject.name : '', activeMindMapRoot);
+}
